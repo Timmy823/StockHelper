@@ -1,0 +1,2 @@
+# StockHelper
+Side Project

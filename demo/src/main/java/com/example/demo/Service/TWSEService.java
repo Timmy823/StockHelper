@@ -13,7 +13,8 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 
-import net.minidev.json.JSONObject;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 
 
 
@@ -21,10 +22,12 @@ public class TWSEService {
     String twseUrl;
     ArrayList<String> companyId = new ArrayList<>();
     ArrayList<String> companyName = new ArrayList<>();
+    ArrayList<String> companyCreateDate = new ArrayList<>();
+    ArrayList<String> companyType = new ArrayList<>();
 
     JSONObject status_code = new JSONObject();
     JSONObject data = new JSONObject();
-    HashMap<String, JSONObject> result = new HashMap<String, JSONObject>();
+    JSONObject result = new JSONObject();
 
     public TWSEService(String twseUrl) throws IOException{
         this.twseUrl = twseUrl;
@@ -82,6 +85,10 @@ public class TWSEService {
                         companyId.add(tmp[0].trim());
                         companyName.add(tmp[1].trim());
                     }
+                    //<td bgcolor="#FAFAD2">1962/02/09</td>
+                    companyCreateDate.add(tds.get(2).text());
+                    //<td bgcolor="#FAFAD2">水泥工業</td>
+                    companyType.add(tds.get(4).text());
                 }
             }
             return responseSuccessObject();
@@ -125,20 +132,26 @@ public class TWSEService {
     public JSONObject responseSuccessObject(){
         putStatusCode("success","");
 
+        JSONArray allstockArray= new JSONArray();
         for (int i=0; i<companyId.size();i++){
-            putDataList(companyId.get(i),companyName.get(i));
+            JSONObject tmpstock= new JSONObject();
+            tmpstock.element("ID",companyId.get(i)) ;
+            tmpstock.element("Name",companyName.get(i)) ;
+            tmpstock.element("上市/上櫃日期",companyCreateDate.get(i)) ;
+            tmpstock.element("產業別",companyType.get(i)) ;
+            allstockArray.add(tmpstock);
         }
+        data.put("stockdata",allstockArray);
         resultJsonObjectStructure();
         
-        return new JSONObject(result);
+        return result;
     }
 
     private JSONObject responseError(String error_msg) {
         putStatusCode("error",error_msg);
-        putDataList("data","");
+        data.put("data","");
         resultJsonObjectStructure();
-
-        return new JSONObject(result);
+        return result;
     }
 
  
@@ -146,13 +159,14 @@ public class TWSEService {
         status_code.put("status", s);
         status_code.put("desc", error_msg);
     }
-    private void putDataList(String s1,String s2) {
-        data.put(s1,s2);
-        
+    /* 
+    private String putStockDataList(String s1,String s2,String s3, String s4) {
+        return  "ID:"+s1,"Name:"+s2,"上市/上櫃日:"+s3,"產業別:"+s4;
     }
+    */
     private void resultJsonObjectStructure() {
-        result.put("data", data);
         result.put("metadata", status_code);
+        result.put("data", data);
     }
     
     

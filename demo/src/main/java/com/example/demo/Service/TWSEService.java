@@ -2,7 +2,6 @@ package com.example.demo.Service;
 import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext; 

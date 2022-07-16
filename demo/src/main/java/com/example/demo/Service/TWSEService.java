@@ -83,11 +83,11 @@ public class TWSEService {
                     if(tmp[0].trim().length()==4){
                         companyId.add(tmp[0].trim());
                         companyName.add(tmp[1].trim());
+                        //<td bgcolor="#FAFAD2">1962/02/09</td>
+                        companyCreateDate.add(tds.get(2).text());
+                        //<td bgcolor="#FAFAD2">水泥工業</td>
+                        companyType.add(tds.get(4).text());
                     }
-                    //<td bgcolor="#FAFAD2">1962/02/09</td>
-                    companyCreateDate.add(tds.get(2).text());
-                    //<td bgcolor="#FAFAD2">水泥工業</td>
-                    companyType.add(tds.get(4).text());
                 }
             }
             return responseSuccessObject();

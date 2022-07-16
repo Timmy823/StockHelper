@@ -97,7 +97,6 @@ public class TWSEService {
         }
     }
 
-
     /**
      * 建立ssl憑證
      * @param urlObj
@@ -125,9 +124,9 @@ public class TWSEService {
             e.printStackTrace();
         }
 
-
         return trust;
     }
+
     public JSONObject responseSuccessObject(){
         putStatusCode("success","");
 
@@ -152,17 +151,12 @@ public class TWSEService {
         resultJsonObjectStructure();
         return result;
     }
-
  
     private void  putStatusCode(String s,String error_msg){
         status_code.put("status", s);
         status_code.put("desc", error_msg);
     }
-    /* 
-    private String putStockDataList(String s1,String s2,String s3, String s4) {
-        return  "ID:"+s1,"Name:"+s2,"上市/上櫃日:"+s3,"產業別:"+s4;
-    }
-    */
+
     private void resultJsonObjectStructure() {
         result.put("metadata", status_code);
         result.put("data", data);

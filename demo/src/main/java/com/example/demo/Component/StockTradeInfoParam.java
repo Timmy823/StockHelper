@@ -33,6 +33,4 @@ public class StockTradeInfoParam{
         this.type=type;
         this.specified_date=specified_date;
     }
-
-
 }

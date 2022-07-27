@@ -7,12 +7,13 @@ import javax.net.ssl.HttpsURLConnection;
 
 import org.jsoup.Jsoup;
 import org.jsoup.select.Elements;
+
 import org.jsoup.nodes.Document;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-public class StockService {
+public class TWSEService {
     String stockUrl;
     ArrayList<Integer> stock_list_date = new ArrayList<>();
     ArrayList<String> stock_list_number = new ArrayList<>();
@@ -25,7 +26,7 @@ public class StockService {
     ArrayList<String> stock_list_turnoverRate= new ArrayList<>();
     ArrayList<String> stock_list_average= new ArrayList<>();
 
-    public StockService(String stockUrl) throws IOException{
+    public TWSEService(String stockUrl) throws IOException{
         this.stockUrl = stockUrl;
     }
     
@@ -57,8 +58,8 @@ public class StockService {
         }
         return url_connection.getInputStream();            
     }
-
-    public JSONObject getStockTradeInfoDaily(String type, Integer specified_date) {
+    
+    public JSONObject getStockTradeInfo(String type, Integer specified_date) {
         try{
             InputStream URLStream = openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream,"UTF-8"));
@@ -69,6 +70,22 @@ public class StockService {
                 all_lines+=line;
             }
             
+            if(type.equals("1")){
+                return StockTradeInfoDaily(all_lines,specified_date);    
+            }else if(type.equals("2")){
+                return StockTradeInfoMonthly(all_lines,specified_date);
+            }else if(type.equals("3")){
+                return StockTradeInfoYearly(all_lines,specified_date);
+            }else{
+                return responseError("get stock trade info error.");
+            }
+        }catch(IOException io){
+            return responseError(io.toString());
+        }
+    }
+
+    public JSONObject StockTradeInfoDaily(String all_lines, Integer specified_date) {
+        try{
             Document doc =  Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
             
@@ -111,17 +128,8 @@ public class StockService {
         }
     }
 
-    public JSONObject getStockTradeInfoMonthly(Integer specified_month) {
+    public JSONObject StockTradeInfoMonthly(String all_lines,Integer specified_month) {
         try{
-            InputStream URLStream = openURL(this.stockUrl);
-            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream,"UTF-8"));
-            String line=null;
-            String all_lines="";
-
-            while((line=buffer.readLine())!= null){
-                all_lines+=line;
-            }
-
             Document doc =  Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
 
@@ -161,17 +169,8 @@ public class StockService {
         }
     }
 
-    public JSONObject getStockTradeInfoYearly(Integer specified_year) {
+    public JSONObject StockTradeInfoYearly(String all_lines, Integer specified_year) {
         try{
-            InputStream URLStream = openURL(this.stockUrl);
-            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream,"UTF-8"));
-            String line=null;
-            String all_lines="";
-            
-            while((line=buffer.readLine())!= null){
-                all_lines+=line;
-            }
-            
             Document doc =  Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
             
@@ -242,7 +241,7 @@ public class StockService {
         return result;
     }
 
-    private JSONObject responseError(String error_msg) {
+    public JSONObject responseError(String error_msg) {
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();

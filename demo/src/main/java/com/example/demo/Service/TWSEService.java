@@ -19,14 +19,6 @@ import net.sf.json.JSONObject;
 
 public class TWSEService {
     String twseUrl;
-    ArrayList<String> companyId = new ArrayList<>();
-    ArrayList<String> companyName = new ArrayList<>();
-    ArrayList<String> companyCreateDate = new ArrayList<>();
-    ArrayList<String> companyType = new ArrayList<>();
-
-    JSONObject status_code = new JSONObject();
-    JSONObject data = new JSONObject();
-    JSONObject result = new JSONObject();
 
     public TWSEService(String twseUrl) throws IOException{
         this.twseUrl = twseUrl;
@@ -57,9 +49,10 @@ public class TWSEService {
         if(url_connection.getResponseCode() != 200){
             System.out.print("\nConnection Fail:"+url_connection.getResponseCode());
         }
+
         return url_connection.getInputStream();            
-    
     }
+
     public JSONObject getCompanyList() {
         try {
             InputStream URLstream = openURL(this.twseUrl);
@@ -72,17 +65,21 @@ public class TWSEService {
 
             Document doc = Jsoup.parse(new String(alllines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
+            ArrayList<String> companyId = new ArrayList<>();
+            ArrayList<String> companyName = new ArrayList<>();
+            ArrayList<String> companyCreateDate = new ArrayList<>();
+            ArrayList<String> companyType = new ArrayList<>();
             
-            String tmp[];
+            String company_data[];
             for(int i=0; i<trs.size(); i++){
                 Elements tds = trs.get(i).select("td");
                 if(tds.size() == 7){
                     //<td bgcolor="#FAFAD2">1101　台泥</td>
-                    tmp = tds.get(0).text().split("　");
+                    company_data = tds.get(0).text().split("　");
                     //get stock company ID
-                    if(tmp[0].trim().length()==4){
-                        companyId.add(tmp[0].trim());
-                        companyName.add(tmp[1].trim());
+                    if(company_data[0].trim().length()==4){
+                        companyId.add(company_data[0].trim());
+                        companyName.add(company_data[1].trim());
                         //<td bgcolor="#FAFAD2">1962/02/09</td>
                         companyCreateDate.add(tds.get(2).text());
                         //<td bgcolor="#FAFAD2">水泥工業</td>
@@ -90,9 +87,11 @@ public class TWSEService {
                     }
                 }
             }
-            return responseSuccessObject();
+            
+            return responseSuccessObject(companyId,companyName,companyCreateDate,companyType);
         }   
         catch (IOException io){
+
             return responseError(io.toString());
         }
     }
@@ -127,10 +126,12 @@ public class TWSEService {
         return trust;
     }
 
-    public JSONObject responseSuccessObject(){
-        putStatusCode("success","");
-
+    private JSONObject responseSuccessObject(ArrayList<String> companyId,ArrayList<String> companyName,ArrayList<String> companyCreateDate,ArrayList<String> companyType){
         JSONArray allstockArray= new JSONArray();
+        JSONObject data = new JSONObject();
+        JSONObject status_code = new JSONObject();
+        JSONObject result = new JSONObject();
+
         for (int i=0; i<companyId.size();i++){
             JSONObject tmpstock= new JSONObject();
             tmpstock.element("ID",companyId.get(i)) ;
@@ -140,29 +141,28 @@ public class TWSEService {
             allstockArray.add(tmpstock);
         }
         data.put("stockdata",allstockArray);
-        resultJsonObjectStructure();
+
+        status_code.put("status", "success");
+        status_code.put("desc", "error_msg");
+
+        result.put("metadata", status_code);
+        result.put("data", data);
         
         return result;
     }
 
     private JSONObject responseError(String error_msg) {
-        putStatusCode("error",error_msg);
+        JSONObject data = new JSONObject();
+        JSONObject status_code = new JSONObject();
+        JSONObject result = new JSONObject();
+    
         data.put("data","");
-        resultJsonObjectStructure();
-        return result;
-    }
- 
-    private void  putStatusCode(String s,String error_msg){
-        status_code.put("status", s);
+        
+        status_code.put("status", "error");
         status_code.put("desc", error_msg);
-    }
-
-    private void resultJsonObjectStructure() {
+    
         result.put("metadata", status_code);
         result.put("data", data);
+        return result;
     }
-    
-    
 }
-
-

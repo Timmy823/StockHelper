@@ -14,9 +14,8 @@ public class TWSEController {
     @GetMapping("/twse/getAllCompanyList")
     public JSONObject getCompanyList(@RequestBody JSONObject input, TWSEService twse) {
 
-        String twseUrl="";
         int list_level = input.getInt("type");
-        twseUrl = "https://isin.twse.com.tw/isin/C_public.jsp?strMode="+String.valueOf(list_level*2);
+        String twseUrl = "https://isin.twse.com.tw/isin/C_public.jsp?strMode="+String.valueOf(list_level*2);
         try {
             twse = new TWSEService(twseUrl);
         } catch (IOException e) {

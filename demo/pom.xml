@@ -29,7 +29,6 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web-services</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
@@ -52,7 +51,6 @@
 			<classifier>jdk15</classifier>
 		</dependency>
  	</dependencies>
-
 	<build>
 		<plugins>
 			<plugin>
@@ -61,5 +59,4 @@
 			</plugin>
 		</plugins>
 	</build>
-
 </project>

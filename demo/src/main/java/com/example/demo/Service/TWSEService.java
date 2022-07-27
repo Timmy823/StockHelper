@@ -15,8 +15,6 @@ import org.jsoup.select.Elements;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-
-
 public class TWSEService {
     String twseUrl;
 
@@ -49,7 +47,6 @@ public class TWSEService {
         if(url_connection.getResponseCode() != 200){
             System.out.print("\nConnection Fail:"+url_connection.getResponseCode());
         }
-
         return url_connection.getInputStream();            
     }
 
@@ -87,11 +84,9 @@ public class TWSEService {
                     }
                 }
             }
-            
             return responseSuccessObject(companyId,companyName,companyCreateDate,companyType);
         }   
         catch (IOException io){
-
             return responseError(io.toString());
         }
     }
@@ -122,7 +117,6 @@ public class TWSEService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return trust;
     }
 
@@ -147,7 +141,6 @@ public class TWSEService {
 
         result.put("metadata", status_code);
         result.put("data", data);
-        
         return result;
     }
 

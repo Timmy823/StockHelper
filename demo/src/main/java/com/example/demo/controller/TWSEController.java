@@ -24,9 +24,9 @@ public class TWSEController {
         String id =input.get_stockID();
         if(type.equals("1")){
             stockUrl="https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=html&date="+specified_date+"&stockNo="+id;
+            System.out.println(stockUrl);
             try{
                 stock= new StockService(stockUrl);
-                System.out.println(stockUrl);
                 return stock.getStockTradeInfoDaily(type,specified_date);
             }catch(IOException e){
                 e.printStackTrace();
@@ -37,7 +37,6 @@ public class TWSEController {
             stockUrl= "https://www.twse.com.tw/exchangeReport/FMSRFK?response=html&date="+specified_date+"&stockNo="+id;
             try{
                 stock= new StockService(stockUrl);
-                System.out.println(stockUrl);
                 return stock.getStockTradeInfoMonthly(specified_date);
             }catch(IOException e){
                 e.printStackTrace();
@@ -48,13 +47,12 @@ public class TWSEController {
             stockUrl="https://www.twse.com.tw/exchangeReport/FMNPTK?response=html&stockNo="+id;
             try{
                 stock= new StockService(stockUrl);
-                System.out.println(stockUrl);
                 return stock.getStockTradeInfoYearly(specified_date);
             }catch(IOException e){
                 e.printStackTrace();
             }
         }
        
-        return null;
+        return new JSONObject();
     }
 }

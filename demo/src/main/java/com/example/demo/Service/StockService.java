@@ -29,7 +29,6 @@ public class StockService {
     JSONObject data = new JSONObject();
     JSONObject result = new JSONObject();
 
-   
     public StockService(String stockUrl) throws IOException{
         this.stockUrl = stockUrl;
     }
@@ -60,10 +59,8 @@ public class StockService {
         if(url_connection.getResponseCode() != 200){
             System.out.print("\nConnection Fail:"+url_connection.getResponseCode());
         }
-        
         return url_connection.getInputStream();            
     }
-
 
     public JSONObject getStockTradeInfoDaily(String type, Integer specified_date) {
         try{
@@ -115,13 +112,10 @@ public class StockService {
                 }
             }
             return responseSuccessObject();
-        
         }catch(IOException io){
             return responseError(io.toString());
-
         }
     }
-
 
     public JSONObject getStockTradeInfoMonthly(Integer specified_month) {
         try{
@@ -170,15 +164,11 @@ public class StockService {
                     break;
                 }
             }
-
             return responseSuccessObject();
-        
         }catch(IOException io){
             return responseError(io.toString());
-
         }
     }
-
 
     public JSONObject getStockTradeInfoYearly(Integer specified_year) {
         try{
@@ -228,22 +218,23 @@ public class StockService {
                 }
             }
             return responseSuccessObject();
-        
         }catch(IOException io){
             return responseError(io.toString());
-
         }
     }
+
     private JSONObject responseError(String error_msg) {
         putStatusCode("error",error_msg);
         data.put("data","");
         resultJsonObjectStructure();
         return result;
     }
+
     private void  putStatusCode(String s,String msg){
         status_code.put("status", s);
         status_code.put("desc", msg);
     }
+
     private void resultJsonObjectStructure() {
         result.put("metadata", status_code);
         result.put("data", data);

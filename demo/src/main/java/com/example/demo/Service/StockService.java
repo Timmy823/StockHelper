@@ -92,9 +92,7 @@ public class StockService {
                     tmp= tds.get(0).text().split("/");
                     tmp_ymd= tmp_ymd+Integer.parseInt(tmp[0].trim())*10000+Integer.parseInt(tmp[1].trim())*100+Integer.parseInt(tmp[2].trim()); 
                     
-                    if(tmp_ymd==specified_date){
-                        flag_ymd=true;
-                    }
+                    flag_ymd=(tmp_ymd==specified_date);
                 }
                 
                 if(flag_ymd){

@@ -84,7 +84,7 @@ public class TWSEService {
                     }
                 }
             }
-            return responseSuccessObject(companyId,companyName,companyCreateDate,companyType);
+            return responseSuccess(companyId,companyName,companyCreateDate,companyType);
         }   
         catch (IOException io){
             return responseError(io.toString());
@@ -120,7 +120,7 @@ public class TWSEService {
         return trust;
     }
 
-    private JSONObject responseSuccessObject(ArrayList<String> companyId,ArrayList<String> companyName,ArrayList<String> companyCreateDate,ArrayList<String> companyType){
+    private JSONObject responseSuccess(ArrayList<String> companyId,ArrayList<String> companyName,ArrayList<String> companyCreateDate,ArrayList<String> companyType){
         JSONArray allstockArray= new JSONArray();
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
@@ -137,7 +137,7 @@ public class TWSEService {
         data.put("stockdata",allstockArray);
 
         status_code.put("status", "success");
-        status_code.put("desc", "error_msg");
+        status_code.put("desc", "");
 
         result.put("metadata", status_code);
         result.put("data", data);

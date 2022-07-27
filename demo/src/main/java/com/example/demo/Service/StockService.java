@@ -25,10 +25,6 @@ public class StockService {
     ArrayList<String> stock_list_turnoverRate= new ArrayList<>();
     ArrayList<String> stock_list_average= new ArrayList<>();
 
-    JSONObject status_code = new JSONObject();
-    JSONObject data = new JSONObject();
-    JSONObject result = new JSONObject();
-
     public StockService(String stockUrl) throws IOException{
         this.stockUrl = stockUrl;
     }
@@ -109,7 +105,7 @@ public class StockService {
                     break;
                 }
             }
-            return responseSuccessObject();
+            return responseSuccess();
         }catch(IOException io){
             return responseError(io.toString());
         }
@@ -142,10 +138,7 @@ public class StockService {
 
                 if(tds.size()== 9){
                     tmp_ymd=(1911+Integer.parseInt(tds.get(0).text().trim()))*100+Integer.parseInt(tds.get(1).text().trim());
-                    
-                    if(tmp_ymd==specified_yyyymm){
-                        flag_ymd=true;
-                    }
+                    flag_ymd=(tmp_ymd==specified_yyyymm);
                 }
 
                 if(flag_ymd){
@@ -162,7 +155,7 @@ public class StockService {
                     break;
                 }
             }
-            return responseSuccessObject();
+            return responseSuccess();
         }catch(IOException io){
             return responseError(io.toString());
         }
@@ -195,10 +188,7 @@ public class StockService {
                 
                 if(tds.size()== 9){
                     tmp_ymd=1911+Integer.parseInt(tds.get(0).text().trim());
-                    
-                    if(tmp_ymd==specified_yyyy){
-                        flag_ymd=true;
-                    }
+                    flag_ymd=(tmp_ymd==specified_yyyy);
                 }
                 
                 if(flag_ymd){
@@ -215,32 +205,17 @@ public class StockService {
                     break;
                 }
             }
-            return responseSuccessObject();
+            return responseSuccess();
         }catch(IOException io){
             return responseError(io.toString());
         }
     }
 
-    private JSONObject responseError(String error_msg) {
-        putStatusCode("error",error_msg);
-        data.put("data","");
-        resultJsonObjectStructure();
-        return result;
-    }
-
-    private void  putStatusCode(String s,String msg){
-        status_code.put("status", s);
-        status_code.put("desc", msg);
-    }
-
-    private void resultJsonObjectStructure() {
-        result.put("metadata", status_code);
-        result.put("data", data);
-    }
-
-    public JSONObject responseSuccessObject(){
-        putStatusCode("success","");
+    public JSONObject responseSuccess(){
         JSONArray allstockArray= new JSONArray();
+        JSONObject data = new JSONObject();
+        JSONObject status_code = new JSONObject();
+        JSONObject result = new JSONObject();
 
         for (int i=0; i<stock_list_date.size(); i++){
             JSONObject tmpstock= new JSONObject();
@@ -259,7 +234,26 @@ public class StockService {
         }
         data.put("stockdata",allstockArray);
         
-        resultJsonObjectStructure();
+        status_code.put("status", "success");
+        status_code.put("desc", "");
+
+        result.put("metadata", status_code);
+        result.put("data", data);
+        return result;
+    }
+
+    private JSONObject responseError(String error_msg) {
+        JSONObject data = new JSONObject();
+        JSONObject status_code = new JSONObject();
+        JSONObject result = new JSONObject();
+    
+        data.put("data","");
+        
+        status_code.put("status", "error");
+        status_code.put("desc", error_msg);
+    
+        result.put("metadata", status_code);
+        result.put("data", data);
         return result;
     }
 }

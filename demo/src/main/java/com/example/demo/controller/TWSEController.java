@@ -52,7 +52,21 @@ public class TWSEController {
                 e.printStackTrace();
             }
         }
-       
-        return new JSONObject();
+        return responseError("Invalid request body.");
+    }
+
+    private JSONObject responseError(String error_msg) {
+        JSONObject data = new JSONObject();
+        JSONObject status_code = new JSONObject();
+        JSONObject result = new JSONObject();
+    
+        data.put("data","");
+        
+        status_code.put("status", "error");
+        status_code.put("desc", error_msg);
+    
+        result.put("metadata", status_code);
+        result.put("data", data);
+        return result;
     }
 }

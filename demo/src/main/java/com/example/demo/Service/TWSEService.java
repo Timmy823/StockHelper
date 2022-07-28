@@ -2,6 +2,7 @@ package com.example.demo.Service;
 import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -15,16 +16,7 @@ import net.sf.json.JSONObject;
 
 public class TWSEService {
     String stockUrl;
-    ArrayList<Integer> stock_list_date = new ArrayList<>();
-    ArrayList<String> stock_list_number = new ArrayList<>();
-    ArrayList<String> stock_list_amount = new ArrayList<>();
-    ArrayList<String> stock_list_openningPrice = new ArrayList<>();
-    ArrayList<String> stock_list_highestPrice= new ArrayList<>();
-    ArrayList<String> stock_list_lowestPrice= new ArrayList<>();
-    ArrayList<String> stock_list_closingPrice= new ArrayList<>();
-    ArrayList<String> stock_list_tradeVolume= new ArrayList<>();
-    ArrayList<String> stock_list_turnoverRate= new ArrayList<>();
-    ArrayList<String> stock_list_average= new ArrayList<>();
+    String[] stock_info_items = {"date","number","amount","openning","highest","lowest","closing","tradeVolume","average","turnoverRate"};
 
     public TWSEService(String stockUrl) throws IOException{
         this.stockUrl = stockUrl;
@@ -63,6 +55,12 @@ public class TWSEService {
         try{
             InputStream URLStream = openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream,"UTF-8"));
+            
+            HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
+            for(int i=0; i<stock_info_items.length; i++){
+                stock_map.put(stock_info_items[i], new ArrayList<String>());
+            }
+
             String line=null;
             String all_lines="";
             
@@ -71,11 +69,11 @@ public class TWSEService {
             }
             
             if(type.equals("1")){
-                return StockTradeInfoDaily(all_lines,specified_date);    
+                return StockTradeInfoDaily(stock_map,all_lines,specified_date);    
             }else if(type.equals("2")){
-                return StockTradeInfoMonthly(all_lines,specified_date);
+                return StockTradeInfoMonthly(stock_map,all_lines,specified_date);
             }else if(type.equals("3")){
-                return StockTradeInfoYearly(all_lines,specified_date);
+                return StockTradeInfoYearly(stock_map,all_lines,specified_date);
             }else{
                 return responseError("get stock trade info error.");
             }
@@ -84,11 +82,11 @@ public class TWSEService {
         }
     }
 
-    public JSONObject StockTradeInfoDaily(String all_lines, Integer specified_date) {
+    public JSONObject StockTradeInfoDaily(HashMap<String, ArrayList<String>> stock_map, String all_lines, Integer specified_date) {
         try{
             Document doc =  Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
-            
+
             String tmp[];
             int tmp_ymd=0;
             boolean flag_ymd=false;
@@ -109,26 +107,26 @@ public class TWSEService {
                 }
                 
                 if(flag_ymd){
-                    stock_list_date.add(tmp_ymd);
-                    stock_list_number.add(tds.get(1).text());
-                    stock_list_amount.add(tds.get(2).text());
-                    stock_list_openningPrice.add(tds.get(3).text());
-                    stock_list_highestPrice.add(tds.get(4).text());
-                    stock_list_lowestPrice.add(tds.get(5).text());
-                    stock_list_closingPrice.add(tds.get(6).text());
-                    stock_list_tradeVolume.add(tds.get(8).text());
-                    stock_list_turnoverRate.add("");
-                    stock_list_average.add("");
+                    stock_map.get("date").add(String.valueOf(tmp_ymd));
+                    stock_map.get("number").add(tds.get(1).text());
+                    stock_map.get("amount").add(tds.get(2).text());
+                    stock_map.get("openning").add(tds.get(3).text());
+                    stock_map.get("highest").add(tds.get(4).text());
+                    stock_map.get("lowest").add(tds.get(5).text());
+                    stock_map.get("closing").add(tds.get(6).text());
+                    stock_map.get("tradeVolume").add(tds.get(8).text());
+                    stock_map.get("turnoverRate").add("");
+                    stock_map.get("average").add("");
                     break;
                 }
             }
-            return responseSuccess();
+            return responseSuccess(stock_map);
         }catch(IOException io){
             return responseError(io.toString());
         }
     }
 
-    public JSONObject StockTradeInfoMonthly(String all_lines,Integer specified_month) {
+    public JSONObject StockTradeInfoMonthly(HashMap<String, ArrayList<String>> stock_map, String all_lines,Integer specified_month) {
         try{
             Document doc =  Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
@@ -148,28 +146,29 @@ public class TWSEService {
                     tmp_ymd=(1911+Integer.parseInt(tds.get(0).text().trim()))*100+Integer.parseInt(tds.get(1).text().trim());
                     flag_ymd=(tmp_ymd==specified_yyyymm);
                 }
-
+                
                 if(flag_ymd){
-                    stock_list_date.add(tmp_ymd);
-                    stock_list_highestPrice.add(tds.get(2).text());
-                    stock_list_lowestPrice.add(tds.get(3).text());
-                    stock_list_average.add(tds.get(4).text());
-                    stock_list_tradeVolume.add(tds.get(5).text());
-                    stock_list_amount.add(tds.get(6).text());
-                    stock_list_number.add(tds.get(7).text());
-                    stock_list_turnoverRate.add(tds.get(8).text());
-                    stock_list_closingPrice.add("");
-                    stock_list_openningPrice.add("");
+                    stock_map.get("date").add(String.valueOf(tmp_ymd));
+                    stock_map.get("highest").add(tds.get(2).text());
+                    stock_map.get("lowest").add(tds.get(3).text());
+                    stock_map.get("average").add(tds.get(4).text());
+                    stock_map.get("tradeVolume").add(tds.get(5).text());
+                    stock_map.get("amount").add(tds.get(6).text());
+                    stock_map.get("number").add(tds.get(7).text());
+                    stock_map.get("turnoverRate").add(tds.get(8).text());
+                    stock_map.get("closing").add("");
+                    stock_map.get("openning").add("");
                     break;
                 }
             }
-            return responseSuccess();
+
+            return responseSuccess(stock_map);
         }catch(IOException io){
             return responseError(io.toString());
         }
     }
 
-    public JSONObject StockTradeInfoYearly(String all_lines, Integer specified_year) {
+    public JSONObject StockTradeInfoYearly(HashMap<String, ArrayList<String>> stock_map, String all_lines, Integer specified_year) {
         try{
             Document doc =  Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
@@ -191,43 +190,42 @@ public class TWSEService {
                 }
                 
                 if(flag_ymd){
-                    stock_list_date.add(tmp_ymd);
-                    stock_list_number.add(tds.get(1).text());
-                    stock_list_amount.add(tds.get(2).text());
-                    stock_list_tradeVolume.add(tds.get(3).text());
-                    stock_list_highestPrice.add(tds.get(4).text());
-                    stock_list_lowestPrice.add(tds.get(6).text());
-                    stock_list_average.add(tds.get(8).text());
-                    stock_list_closingPrice.add("");
-                    stock_list_openningPrice.add("");
-                    stock_list_turnoverRate.add("");
+                    stock_map.get("date").add(String.valueOf(tmp_ymd));
+                    stock_map.get("number").add(tds.get(1).text());
+                    stock_map.get("amount").add(tds.get(2).text());
+                    stock_map.get("openning").add("");
+                    stock_map.get("highest").add(tds.get(4).text());
+                    stock_map.get("lowest").add(tds.get(6).text());
+                    stock_map.get("closing").add("");
+                    stock_map.get("tradeVolume").add(tds.get(3).text());
+                    stock_map.get("turnoverRate").add("");
+                    stock_map.get("average").add(tds.get(8).text());
                     break;
                 }
             }
-            return responseSuccess();
+            return responseSuccess(stock_map);
         }catch(IOException io){
             return responseError(io.toString());
         }
     }
 
-    public JSONObject responseSuccess(){
+    public JSONObject responseSuccess(HashMap<String,ArrayList<String>> stock_map){
         JSONArray allstockArray= new JSONArray();
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();
 
-        for (int i=0; i<stock_list_date.size(); i++){
+        for (int i=0; i<stock_map.get("date").size(); i++){
             JSONObject tmpstock= new JSONObject();
-        
-            tmpstock.element("share_number(B)",stock_list_number.get(i));
-            tmpstock.element("share_amount(A)",stock_list_amount.get(i));
-            tmpstock.element("trade_volume",stock_list_tradeVolume.get(i));
-            tmpstock.element("openning_price",stock_list_openningPrice.get(i));
-            tmpstock.element("hightest_price",stock_list_highestPrice.get(i));
-            tmpstock.element("lowest_price",stock_list_lowestPrice.get(i));
-            tmpstock.element("closing_price(average)",stock_list_closingPrice.get(i));
-            tmpstock.element("the_average_of_ShareAmount(A)_and_ShareNumber(B)",stock_list_average.get(i));
-            tmpstock.element("turnover_rate(%)",stock_list_turnoverRate.get(i));
+            tmpstock.element("share_number(B)",stock_map.get("number").get(i));
+            tmpstock.element("share_amount(A)",stock_map.get("amount").get(i));
+            tmpstock.element("trade_volume",stock_map.get("tradeVolume").get(i));
+            tmpstock.element("openning_price",stock_map.get("openning").get(i));
+            tmpstock.element("hightest_price",stock_map.get("highest").get(i));
+            tmpstock.element("lowest_price",stock_map.get("lowest").get(i));
+            tmpstock.element("closing_price(average)",stock_map.get("closing").get(i));
+            tmpstock.element("the_average_of_ShareAmount(A)_and_ShareNumber(B)",stock_map.get("average").get(i));
+            tmpstock.element("turnover_rate(%)",stock_map.get("turnoverRate").get(i));
             
             allstockArray.add(tmpstock);
         }

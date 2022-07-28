@@ -52,7 +52,7 @@ public class TWSEService {
         return url_connection.getInputStream();            
     }
     
-    public JSONObject  getStockMarketIndex() {
+    public JSONObject  getStockMarketIndex(String type) {
         try{
             InputStream URLStream = openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream,"UTF-8"));
@@ -67,13 +67,21 @@ public class TWSEService {
             while((line=buffer.readLine())!= null){
                 all_lines+=line;
             }
-            return StockMaketIndexDataParsing(stock_map, all_lines);    
+            /*
+            1:listed market index 
+            2:OTC market index
+            */
+            if(type.equals("1")){
+                return StockMaketIndexDataParsingListed(stock_map, all_lines);  
+            }else{
+                return StockMaketIndexDataParsingOTC(stock_map, all_lines);
+            }
         }catch(IOException io){
             return responseError(io.toString());
         }
     }
 
-    public JSONObject StockMaketIndexDataParsing(HashMap<String, ArrayList<String>> stock_map, String all_lines){
+    public JSONObject StockMaketIndexDataParsingListed(HashMap<String, ArrayList<String>> stock_map, String all_lines){
         try{
             Document doc =  Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements tables = doc.select("table");
@@ -103,12 +111,49 @@ public class TWSEService {
         }
     }
 
+    public JSONObject StockMaketIndexDataParsingOTC(HashMap<String, ArrayList<String>> stock_map, String all_lines){
+        try{
+            Document doc =  Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
+            Elements tables = doc.select("table");
+
+            //html tables format ={上櫃股價指數收盤行情,報酬指數}
+            Elements trs = tables.get(0).select("tr");
+
+            String otc_sign = "";
+
+            //html tds format ={指數,收市指數,漲跌,漲跌幅度 (%)}
+            for(int i=2; i<trs.size(); i++){
+                Elements tds = trs.get(i).select("td");
+                
+                if(tds.size()!=4)
+                    continue;
+
+                stock_map.get(stock_index_items[0]).add(tds.get(0).text());
+                stock_map.get(stock_index_items[1]).add(tds.get(1).text());
+
+                otc_sign=tds.get(2).text().substring(0,1);
+                if(!otc_sign.equals("-"))
+                {
+                    otc_sign="+";
+                    stock_map.get(stock_index_items[3]).add(tds.get(2).text());
+                    stock_map.get(stock_index_items[4]).add(tds.get(3).text());    
+                }else{
+                    stock_map.get(stock_index_items[3]).add(tds.get(2).text().substring(1));
+                    stock_map.get(stock_index_items[4]).add(tds.get(3).text().substring(1));    
+                }
+                stock_map.get(stock_index_items[2]).add(otc_sign);
+            }   
+            return responseSuccess(stock_map);
+        }catch(IOException io){
+            return responseError(io.toString());
+        }
+    }
+
     public JSONObject responseSuccess(HashMap<String,ArrayList<String>> stock_map){
         JSONArray allstockArray= new JSONArray();
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();
-        
         for (int i=0; i<stock_map.get(stock_index_items[0]).size(); i++){
             JSONObject tmpstock= new JSONObject();
             tmpstock.element("index_name",stock_map.get(stock_index_items[0]).get(i));

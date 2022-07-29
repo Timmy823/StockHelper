@@ -1,9 +1,13 @@
 package com.example.demo.controller;
 
+import com.example.demo.Component.StockMarketIndexParam;
 import com.example.demo.Service.TWSEService;
+
 import net.sf.json.JSONObject;
 
 import java.io.IOException;
+
+import javax.validation.Valid;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -11,11 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class TWSEController {
+    
     @GetMapping("/twse/getStockMarketIndex")
-    public JSONObject getStockMarketIndex(@RequestBody JSONObject input, TWSEService twse){
+    public JSONObject getStockMarketIndex(@Valid @RequestBody StockMarketIndexParam input, TWSEService twse){
         
-        Integer specified_date =input.getInt("specified_date");
-        String type = input.getString("type");
+        Integer specified_date =input.get_date();
+        String type = input.get_type();
         String stockUrl ="";
 
         if(type.equals("1"))
@@ -27,7 +32,7 @@ public class TWSEController {
                 "/"+String.valueOf(specified_date).substring(3,5)+
                 "/"+String.valueOf(specified_date).substring(5,7)+"&s=0,asc,0&o=htm";
         }
-  
+
         try{
             twse= new TWSEService(stockUrl);
             return twse.getStockMarketIndex(type);

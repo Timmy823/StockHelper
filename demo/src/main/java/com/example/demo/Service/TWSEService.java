@@ -9,7 +9,6 @@ import javax.net.ssl.HttpsURLConnection;
 import org.jsoup.Jsoup;
 import org.jsoup.select.Elements;
 
-
 import org.jsoup.nodes.Document;
 
 import net.sf.json.JSONArray;
@@ -105,7 +104,7 @@ public class TWSEService {
                     }
                 }   
             }
-            return responseSuccess(stock_map);
+            return responseStockMarketIndexSuccess(stock_map);
         }catch(IOException io){
             return responseError(io.toString());
         }
@@ -143,25 +142,24 @@ public class TWSEService {
                 }
                 stock_map.get(stock_index_items[2]).add(otc_sign);
             }   
-            return responseSuccess(stock_map);
+            return responseStockMarketIndexSuccess(stock_map);
         }catch(IOException io){
             return responseError(io.toString());
         }
     }
 
-    public JSONObject responseSuccess(HashMap<String,ArrayList<String>> stock_map){
+    public JSONObject responseStockMarketIndexSuccess(HashMap<String,ArrayList<String>> stock_map){
         JSONArray allstockArray= new JSONArray();
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();
+        String[] request_key = {"index_name","closing_index","change_sign","price_change","price_fluctuation(%)"};
+
         for (int i=0; i<stock_map.get(stock_index_items[0]).size(); i++){
             JSONObject tmpstock= new JSONObject();
-            tmpstock.element("index_name",stock_map.get(stock_index_items[0]).get(i));
-            tmpstock.element("closing_index",stock_map.get(stock_index_items[1]).get(i));
-            tmpstock.element("change_sign",stock_map.get(stock_index_items[2]).get(i));
-            tmpstock.element("price_change",stock_map.get(stock_index_items[3]).get(i));
-            tmpstock.element("price_fluctuation(%)",stock_map.get(stock_index_items[4]).get(i));
-            
+            for(int j=0; j<request_key.length; j++){
+                tmpstock.element(request_key[j],stock_map.get(stock_index_items[j]).get(i));
+            }
             allstockArray.add(tmpstock);
         }
         data.put("stockdata",allstockArray);

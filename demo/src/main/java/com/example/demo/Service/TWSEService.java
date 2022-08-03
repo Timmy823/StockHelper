@@ -16,7 +16,7 @@ import net.sf.json.JSONObject;
 
 public class TWSEService {
     String stockUrl;
-    String[] stock_index_items = {"date","before_price","ex_dividend","dividend","ex_yield","yield","total_yield","pe_ratio","eps","makeup_days","makeup_date"};
+    String[] stock_index_items = {"date","before_price","ex_dividend","dividend","ex_yield","yield","total_yield","makeup_days","makeup_date"};
 
     public TWSEService(String stockUrl) throws IOException{
         this.stockUrl = stockUrl;
@@ -83,9 +83,16 @@ public class TWSEService {
                 Elements tds = trs.get(i).select("td");
                 if(tds.size()!=11)
                     continue;
-                for(int j=0; j<tds.size(); j++){
-                    stock_map.get(stock_index_items[j]).add(tds.get(j).text());
-                }
+
+                stock_map.get(stock_index_items[0]).add(tds.get(0).text());
+                stock_map.get(stock_index_items[1]).add(tds.get(1).text());
+                stock_map.get(stock_index_items[2]).add(tds.get(2).text());
+                stock_map.get(stock_index_items[3]).add(tds.get(3).text());
+                stock_map.get(stock_index_items[4]).add(tds.get(4).text());
+                stock_map.get(stock_index_items[5]).add(tds.get(5).text());
+                stock_map.get(stock_index_items[6]).add(tds.get(6).text());
+                stock_map.get(stock_index_items[7]).add(tds.get(9).text());
+                stock_map.get(stock_index_items[8]).add(tds.get(10).text());
             }   
             return responseStockMarketIndexSuccess(stock_map);
         }catch(IOException io){
@@ -99,8 +106,8 @@ public class TWSEService {
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();
         //make up dividend days 指的是填息天數；make up dividend date 填息日期
-        String[] request_key = {"(EX)dividend_date","dividend_price_before","EX-dividend(dollor/share)","dividend(dollor/hundredShare)",
-        "cash_dividend_yeild","dividend_yeild","total_yeil","price-earnings_ratio","EPS","makeup_dividend_days","makeup_dividendt_date"};
+        String[] request_key = {"(EX)dividend_date","dividend_price_before","EX_dividend(dollor/share)","dividend(dollor/hundred_share)",
+        "cash_dividend_yeild","dividend_yeild","total_yeil","makeup_dividend_days","makeup_dividendt_date"};
         
         for (int i=0; i<stock_map.get(stock_index_items[0]).size(); i++){
             JSONObject tmpstock= new JSONObject();

@@ -28,7 +28,7 @@ public class StockInfoProfileService {
 
     public void companyParseToList(String all_lines){
         try{
-            String tmp [];
+            String temp [];
             Document doc= Jsoup.parse(new String (all_lines.getBytes("UTF-8"),"UTF-8"));
             //div.class="D(f) Fx(a) Mb($m-module)"
             //div#id=main-2-QuoteProfile-Proxy > div.class="grid-item item-span-6 break-mobile"
@@ -38,15 +38,15 @@ public class StockInfoProfileService {
             //主要業務內容
             Elements divs2= doc.select("section");
             divs2.get(0).text().split(" ");
-            tmp=divs2.get(0).text().split(" ");
-            company_list.add(tmp[tmp.length-1].trim());
+            temp=divs2.get(0).text().split(" ");
+            company_list.add(temp[temp.length-1].trim());
 
             for(int i=0; i<div.size(); i++){
-                tmp=div.get(i).text().split(" ");
-                if (tmp[0].equals("股利所屬期間"))
+                temp=div.get(i).text().split(" ");
+                if (temp[0].equals("股利所屬期間"))
                     break;
                 if(i==4 ||i==5 ||i==6 ||i==7 ||i==9 ||i==10 || i==11 ||i==12 ||i==14 ||i==16 ||i==17 ||i==18 ||i==20)
-                    company_list.add(tmp[tmp.length-1].trim());
+                    company_list.add(temp[temp.length-1].trim());
             }
         }catch (UnsupportedEncodingException e) {
             // TODO Auto-generated catch block
@@ -105,39 +105,39 @@ public class StockInfoProfileService {
         putStatusCode("success","");
 
         JSONArray allstockArray= new JSONArray();
-        JSONObject tmpstock= new JSONObject();
+        JSONObject tempstock= new JSONObject();
         for (int i=0; i<company_list.size();i++){
             if(i==0)
-                tmpstock.element("main_business",company_list.get(i));
+                tempstock.element("main_business",company_list.get(i));
             if(i==1)
-                tmpstock.element("created_date",company_list.get(i));
+                tempstock.element("created_date",company_list.get(i));
             if(i==2)
-                tmpstock.element("telephone",company_list.get(i));
+                tempstock.element("telephone",company_list.get(i));
             if(i==3)
-                tmpstock.element("listed_date",company_list.get(i));
+                tempstock.element("listed_date",company_list.get(i));
             if(i==4)
-                tmpstock.element("fax",company_list.get(i));
+                tempstock.element("fax",company_list.get(i));
             if(i==5)
-                tmpstock.element("website",company_list.get(i));
+                tempstock.element("website",company_list.get(i));
             if(i==6)
-                tmpstock.element("chairman",company_list.get(i));
+                tempstock.element("chairman",company_list.get(i));
             if(i==7)
-                tmpstock.element("email",company_list.get(i));
+                tempstock.element("email",company_list.get(i));
             if(i==8)
-                tmpstock.element("president",company_list.get(i));
+                tempstock.element("president",company_list.get(i));
             if(i==9)
-                tmpstock.element("share_capital",company_list.get(i));
+                tempstock.element("share_capital",company_list.get(i));
             if(i==10)
-                tmpstock.element("share_number",company_list.get(i));
+                tempstock.element("share_number",company_list.get(i));
             if(i==11)
-                tmpstock.element("address",company_list.get(i));
+                tempstock.element("address",company_list.get(i));
             if(i==12)
-                tmpstock.element("market_value",company_list.get(i));
+                tempstock.element("market_value",company_list.get(i));
             if(i==13)
-                tmpstock.element("share_hoding_radio",company_list.get(i));   
+                tempstock.element("share_hoding_radio",company_list.get(i));   
         }
 
-        allstockArray.add(tmpstock);
+        allstockArray.add(tempstock);
         data.put("stockdata",allstockArray);
 
         resultJsonObjectStructure();

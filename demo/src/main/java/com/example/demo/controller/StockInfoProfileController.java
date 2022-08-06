@@ -1,4 +1,4 @@
-package com.example.demo.Controller;
+package com.example.demo.controller;
 
 import net.sf.json.JSONObject;
 
@@ -21,12 +21,10 @@ public class StockInfoProfileController {
         Integer stockid =input.getInt("id");
         stockUrl="https://tw.stock.yahoo.com/quote/"+stockid+"/profile";
         try{
-            stock= new StockInfoProfileService(stockUrl);
-            System.out.println(stockUrl);   
+            stock= new StockInfoProfileService(stockUrl);  
         }catch(IOException e){
             e.printStackTrace();
         }   
         return stock.getCompanyProfile();  
     }
 }
-

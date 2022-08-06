@@ -91,17 +91,17 @@ public class TWSEService {
             int temp_ymd=0;
             boolean flag_ymd=false;
             
-            //{日期,成交股數,成交金額,開盤價,最高價,最低價,收盤價,漲跌價差,成交筆數}
+            //{日期,成交股數,成交金額,開盤價,最高價,最低價,收盤價,漲跌價差,成交筆數} trs資料第一行是中文標題欄位，故從i=2開始取得內文資料做處理。
             for(int i=2; i<trs.size();i++){
                 flag_ymd=false;
             
                 Elements tds = trs.get(i).select("td");
             
-                //<td>111/07/01</td>
+                //<td>111/07/01</td> 先處理日期字串中可能有異常空白問題"111 /07/01"，再以"/"分割年月日後後重新計算成西元年月日"20220701"。
                 if(tds.size()== 9){
                     temp_ymd=19110000;
-                    temp= tds.get(0).text().split("/");
-                    temp_ymd= temp_ymd+Integer.parseInt(temp[0].trim())*10000+Integer.parseInt(temp[1].trim())*100+Integer.parseInt(temp[2].trim()); 
+                    temp= tds.get(0).text().replaceAll(" ", "").split("/");
+                    temp_ymd= temp_ymd+Integer.parseInt(temp[0])*10000+Integer.parseInt(temp[1])*100+Integer.parseInt(temp[2]); 
                     
                     flag_ymd=(temp_ymd==specified_date);
                 }

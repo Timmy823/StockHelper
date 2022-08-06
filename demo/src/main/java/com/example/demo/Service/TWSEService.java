@@ -55,11 +55,6 @@ public class TWSEService {
         try{
             InputStream URLStream = openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream,"UTF-8"));
-            
-            HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
-            for(int i=0; i<stock_info_items.length; i++){
-                stock_map.put(stock_info_items[i], new ArrayList<String>());
-            }
 
             String line=null;
             String all_lines="";
@@ -69,11 +64,11 @@ public class TWSEService {
             }
             
             if(type.equals("1")){
-                return StockTradeInfoDaily(stock_map,all_lines,specified_date);    
+                return StockTradeInfoDaily(all_lines,specified_date);    
             }else if(type.equals("2")){
-                return StockTradeInfoMonthly(stock_map,all_lines,specified_date);
+                return StockTradeInfoMonthly(all_lines,specified_date);
             }else if(type.equals("3")){
-                return StockTradeInfoYearly(stock_map,all_lines,specified_date);
+                return StockTradeInfoYearly(all_lines,specified_date);
             }else{
                 return responseError("get stock trade info error.");
             }
@@ -82,13 +77,18 @@ public class TWSEService {
         }
     }
 
-    public JSONObject StockTradeInfoDaily(HashMap<String, ArrayList<String>> stock_map, String all_lines, Integer specified_date) {
+    public JSONObject StockTradeInfoDaily(String all_lines, Integer specified_date) {
         try{
+            HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
+            for(int i=0; i<stock_info_items.length; i++){
+                stock_map.put(stock_info_items[i], new ArrayList<String>());
+            }
+
             Document doc =  Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
 
-            String tmp[];
-            int tmp_ymd=0;
+            String temp[];
+            int temp_ymd=0;
             boolean flag_ymd=false;
             
             //{日期,成交股數,成交金額,開盤價,最高價,最低價,收盤價,漲跌價差,成交筆數}
@@ -99,15 +99,15 @@ public class TWSEService {
             
                 //<td>111/07/01</td>
                 if(tds.size()== 9){
-                    tmp_ymd=19110000;
-                    tmp= tds.get(0).text().split("/");
-                    tmp_ymd= tmp_ymd+Integer.parseInt(tmp[0].trim())*10000+Integer.parseInt(tmp[1].trim())*100+Integer.parseInt(tmp[2].trim()); 
+                    temp_ymd=19110000;
+                    temp= tds.get(0).text().split("/");
+                    temp_ymd= temp_ymd+Integer.parseInt(temp[0].trim())*10000+Integer.parseInt(temp[1].trim())*100+Integer.parseInt(temp[2].trim()); 
                     
-                    flag_ymd=(tmp_ymd==specified_date);
+                    flag_ymd=(temp_ymd==specified_date);
                 }
                 
                 if(flag_ymd){
-                    stock_map.get("date").add(String.valueOf(tmp_ymd));
+                    stock_map.get("date").add(String.valueOf(temp_ymd));
                     stock_map.get("number").add(tds.get(1).text());
                     stock_map.get("amount").add(tds.get(2).text());
                     stock_map.get("openning").add(tds.get(3).text());
@@ -126,12 +126,17 @@ public class TWSEService {
         }
     }
 
-    public JSONObject StockTradeInfoMonthly(HashMap<String, ArrayList<String>> stock_map, String all_lines,Integer specified_month) {
+    public JSONObject StockTradeInfoMonthly(String all_lines,Integer specified_month) {
         try{
+            HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
+            for(int i=0; i<stock_info_items.length; i++){
+                stock_map.put(stock_info_items[i], new ArrayList<String>());
+            }
+
             Document doc =  Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
 
-            int tmp_ymd=0;
+            int temp_ymd=0;
             int specified_yyyymm=Integer.parseInt(specified_month.toString().substring(0,6));
             
             boolean flag_ymd=false;
@@ -143,12 +148,12 @@ public class TWSEService {
                 Elements tds = trs.get(i).select("td");
 
                 if(tds.size()== 9){
-                    tmp_ymd=(1911+Integer.parseInt(tds.get(0).text().trim()))*100+Integer.parseInt(tds.get(1).text().trim());
-                    flag_ymd=(tmp_ymd==specified_yyyymm);
+                    temp_ymd=(1911+Integer.parseInt(tds.get(0).text().trim()))*100+Integer.parseInt(tds.get(1).text().trim());
+                    flag_ymd=(temp_ymd==specified_yyyymm);
                 }
                 
                 if(flag_ymd){
-                    stock_map.get("date").add(String.valueOf(tmp_ymd));
+                    stock_map.get("date").add(String.valueOf(temp_ymd));
                     stock_map.get("highest").add(tds.get(2).text());
                     stock_map.get("lowest").add(tds.get(3).text());
                     stock_map.get("average").add(tds.get(4).text());
@@ -168,12 +173,17 @@ public class TWSEService {
         }
     }
 
-    public JSONObject StockTradeInfoYearly(HashMap<String, ArrayList<String>> stock_map, String all_lines, Integer specified_year) {
+    public JSONObject StockTradeInfoYearly(String all_lines, Integer specified_year) {
         try{
+            HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
+            for(int i=0; i<stock_info_items.length; i++){
+                stock_map.put(stock_info_items[i], new ArrayList<String>());
+            }
+
             Document doc =  Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
             
-            int tmp_ymd=0;
+            int temp_ymd=0;
             int specified_yyyy=Integer.parseInt(specified_year.toString().substring(0,4));
             
             boolean flag_ymd=false;
@@ -185,12 +195,12 @@ public class TWSEService {
                 Elements tds = trs.get(i).select("td");
                 
                 if(tds.size()== 9){
-                    tmp_ymd=1911+Integer.parseInt(tds.get(0).text().trim());
-                    flag_ymd=(tmp_ymd==specified_yyyy);
+                    temp_ymd=1911+Integer.parseInt(tds.get(0).text().trim());
+                    flag_ymd=(temp_ymd==specified_yyyy);
                 }
                 
                 if(flag_ymd){
-                    stock_map.get("date").add(String.valueOf(tmp_ymd));
+                    stock_map.get("date").add(String.valueOf(temp_ymd));
                     stock_map.get("number").add(tds.get(1).text());
                     stock_map.get("amount").add(tds.get(2).text());
                     stock_map.get("openning").add("");
@@ -216,18 +226,18 @@ public class TWSEService {
         JSONObject result = new JSONObject();
 
         for (int i=0; i<stock_map.get("date").size(); i++){
-            JSONObject tmpstock= new JSONObject();
-            tmpstock.element("share_number(B)",stock_map.get("number").get(i));
-            tmpstock.element("share_amount(A)",stock_map.get("amount").get(i));
-            tmpstock.element("trade_volume",stock_map.get("tradeVolume").get(i));
-            tmpstock.element("openning_price",stock_map.get("openning").get(i));
-            tmpstock.element("hightest_price",stock_map.get("highest").get(i));
-            tmpstock.element("lowest_price",stock_map.get("lowest").get(i));
-            tmpstock.element("closing_price(average)",stock_map.get("closing").get(i));
-            tmpstock.element("the_average_of_ShareAmount(A)_and_ShareNumber(B)",stock_map.get("average").get(i));
-            tmpstock.element("turnover_rate(%)",stock_map.get("turnoverRate").get(i));
+            JSONObject tempstock= new JSONObject();
+            tempstock.element("share_number(B)",stock_map.get("number").get(i));
+            tempstock.element("share_amount(A)",stock_map.get("amount").get(i));
+            tempstock.element("trade_volume",stock_map.get("tradeVolume").get(i));
+            tempstock.element("openning_price",stock_map.get("openning").get(i));
+            tempstock.element("hightest_price",stock_map.get("highest").get(i));
+            tempstock.element("lowest_price",stock_map.get("lowest").get(i));
+            tempstock.element("closing_price(average)",stock_map.get("closing").get(i));
+            tempstock.element("the_average_of_ShareAmount(A)_and_ShareNumber(B)",stock_map.get("average").get(i));
+            tempstock.element("turnover_rate(%)",stock_map.get("turnoverRate").get(i));
             
-            allstockArray.add(tmpstock);
+            allstockArray.add(tempstock);
         }
         data.put("stockdata",allstockArray);
         

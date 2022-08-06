@@ -16,7 +16,8 @@ import net.sf.json.JSONObject;
 
 public class TWSEService {
     String stockUrl;
-    String[] stock_index_items = {"date","before_price","ex_dividend","dividend","ex_yield","yield","total_yield","makeup_days","makeup_date"};
+    String[] stock_index_items = {"period","dividend","right",
+    "dividend_date","right_date","payment_date","right_payment_date","makeup_days"};
 
     public TWSEService(String stockUrl) throws IOException{
         this.stockUrl = stockUrl;
@@ -72,49 +73,46 @@ public class TWSEService {
         try{
             HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
             for(int i=0; i<stock_index_items.length; i++){
-                stock_map.put(stock_index_items[i], new ArrayList<String>());
+                stock_map.put(stock_index_items[i], new  ArrayList<String>());
             }
 
+            //只需要取得股利政策的table底下的<li class="List(n)">
             Document doc =  Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
-            Elements trs = doc.select("tr");
+            Elements li_lists=doc.select("div.table-body-wrapper").get(0).select("li");
 
-           //html tables format ={除權息日,除權息前股價,配息(元/股),配股(元/百股),現金殖利率,股票殖利率,合計殖利率,本益比price-earnings ratio,EPS,填息天數,填息日期}
-            for(int i=1; i<trs.size(); i++){
-                Elements tds = trs.get(i).select("td");
-                if(tds.size()!=11)
+            //html div element format ={股利所屬期間,現金股利,股票股利,除息日,除權日,現金股利發放日,股票股利發放,填息天數,股利合計}
+            for(int i=0; i<li_lists.size(); i++){
+                //要取得的八個div element外面包了一層div、第一個element "股利所屬期間" 另外又包了一層div，故加起來有10個div。
+                Elements tds = li_lists.get(i).select("div").get(0).select("div");
+                
+                if(tds.size()!=10)
                     continue;
 
-                stock_map.get(stock_index_items[0]).add(tds.get(0).text());
-                stock_map.get(stock_index_items[1]).add(tds.get(1).text());
-                stock_map.get(stock_index_items[2]).add(tds.get(2).text());
-                stock_map.get(stock_index_items[3]).add(tds.get(3).text());
-                stock_map.get(stock_index_items[4]).add(tds.get(4).text());
-                stock_map.get(stock_index_items[5]).add(tds.get(5).text());
-                stock_map.get(stock_index_items[6]).add(tds.get(6).text());
-                stock_map.get(stock_index_items[7]).add(tds.get(9).text());
-                stock_map.get(stock_index_items[8]).add(tds.get(10).text());
+                for(int j=2; j<tds.size(); j++){
+                    stock_map.get(stock_index_items[j-2]).add(tds.get(j).text());
+                }
             }   
-            return responseStockMarketIndexSuccess(stock_map);
+            return responseCompanyDividendPolicySuccess(stock_map);
         }catch(IOException io){
             return responseError(io.toString());
         }
     }
 
-    public JSONObject responseStockMarketIndexSuccess(HashMap<String,ArrayList<String>> stock_map){
+    public JSONObject responseCompanyDividendPolicySuccess(HashMap<String,ArrayList<String>> stock_map){
         JSONArray allstockArray= new JSONArray();
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();
-        //make up dividend days 指的是填息天數；make up dividend date 填息日期
-        String[] request_key = {"(EX)dividend_date","dividend_price_before","EX_dividend(dollor/share)","dividend(dollor/hundred_share)",
-        "cash_dividend_yeild","dividend_yeild","total_yeil","makeup_dividend_days","makeup_dividendt_date"};
-        
+        //make up dividend days 指的是填息天數。
+        String[] request_key = {"dividend_period","cash_dividend(dollors)","stock_dividend(shares)"
+        ,"EX-dividend_date","EX-right_date","dividend_payment_date","right_payment_date","make_up_dividend_days"};
+
         for (int i=0; i<stock_map.get(stock_index_items[0]).size(); i++){
-            JSONObject tmpstock= new JSONObject();
+            JSONObject tempstock= new JSONObject();
             for(int j=0; j<request_key.length; j++){
-                tmpstock.element(request_key[j],stock_map.get(stock_index_items[j]).get(i));
+                tempstock.element(request_key[j],stock_map.get(stock_index_items[j]).get(i));
             }
-            allstockArray.add(tmpstock);
+            allstockArray.add(tempstock);
         }
         data.put("stockdata",allstockArray);
         

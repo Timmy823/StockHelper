@@ -15,8 +15,8 @@ public class TWSEController {
     @GetMapping("/twse/getCompanyDividendPolicy")
     public JSONObject getStockMarketIndex(@RequestBody JSONObject input, TWSEService twse){
         String id =input.getString("id");
-        String stockUrl= "https://stockinfo.tw/dividends/?stockSearch="+id;
-
+        String stockUrl= "https://tw.stock.yahoo.com/quote/"+id+"/dividend";
+        
         try{
             twse= new TWSEService(stockUrl);
             return twse.getCompanyDividendPolicy();

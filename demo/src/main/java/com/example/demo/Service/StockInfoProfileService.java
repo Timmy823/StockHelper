@@ -66,7 +66,7 @@ public class StockInfoProfileService {
             }
             companyParseToList(all_lines);
            
-            return responseSuccessObject();
+            return responseCompanyProfileSuccessObject();
         }   
         catch (IOException io){
             return responseError(io.toString());
@@ -101,40 +101,15 @@ public class StockInfoProfileService {
     
     }
 
-    public JSONObject responseSuccessObject(){
+    public JSONObject responseCompanyProfileSuccessObject(){
         putStatusCode("success","");
 
         JSONArray allstockArray= new JSONArray();
         JSONObject tempstock= new JSONObject();
+        String [] stock_items={"main_business","created_date","telephone","listed_date","fax","website","chairman"
+                              ,"email","president","share_capital","share_number","address","market_value","share_hoding_radio"};
         for (int i=0; i<company_list.size();i++){
-            if(i==0)
-                tempstock.element("main_business",company_list.get(i));
-            if(i==1)
-                tempstock.element("created_date",company_list.get(i));
-            if(i==2)
-                tempstock.element("telephone",company_list.get(i));
-            if(i==3)
-                tempstock.element("listed_date",company_list.get(i));
-            if(i==4)
-                tempstock.element("fax",company_list.get(i));
-            if(i==5)
-                tempstock.element("website",company_list.get(i));
-            if(i==6)
-                tempstock.element("chairman",company_list.get(i));
-            if(i==7)
-                tempstock.element("email",company_list.get(i));
-            if(i==8)
-                tempstock.element("president",company_list.get(i));
-            if(i==9)
-                tempstock.element("share_capital",company_list.get(i));
-            if(i==10)
-                tempstock.element("share_number",company_list.get(i));
-            if(i==11)
-                tempstock.element("address",company_list.get(i));
-            if(i==12)
-                tempstock.element("market_value",company_list.get(i));
-            if(i==13)
-                tempstock.element("share_hoding_radio",company_list.get(i));   
+            tempstock.element(stock_items[i],company_list.get(i));
         }
 
         allstockArray.add(tempstock);

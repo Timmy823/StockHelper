@@ -63,7 +63,7 @@ public class TWSEService {
             driver.close();
             driver.quit();
             System.out.println("driver is closed");
-            return responseMonthlyRevenueSuccess(stock_map);
+            return (stock_map.get(stock_revenue_items[0]).size())!=0 ? responseMonthlyRevenueSuccess(stock_map)  : responseError("網頁查無符合資料");
         }catch(Exception io){
             return responseError(io.toString());
         }

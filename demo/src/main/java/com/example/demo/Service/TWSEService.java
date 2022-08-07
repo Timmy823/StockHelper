@@ -62,13 +62,14 @@ public class TWSEService {
 
             driver.close();
             driver.quit();
+            System.out.println("driver is closed");
             return responseMonthlyRevenueSuccess(stock_map);
         }catch(Exception io){
             return responseError(io.toString());
         }
     }
 
-    public JSONObject responseMonthlyRevenueSuccess(HashMap<String,ArrayList<String>> stock_map){
+    private JSONObject responseMonthlyRevenueSuccess(HashMap<String,ArrayList<String>> stock_map){
         JSONArray allstockArray= new JSONArray();
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();

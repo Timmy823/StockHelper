@@ -6,10 +6,13 @@ import java.util.HashMap;
 
 import javax.net.ssl.HttpsURLConnection;
 
-import org.jsoup.Jsoup;
-import org.jsoup.select.Elements;
+import javax.net.ssl.SSLContext; 
+import javax.net.ssl.TrustManager; 
+import javax.net.ssl.X509TrustManager;
 
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -17,13 +20,16 @@ import net.sf.json.JSONObject;
 public class TWSEService {
     String stockUrl;
     String[] stock_info_items = {"date","number","amount","openning","highest","lowest","closing","tradeVolume","average","turnoverRate"};
+    String[] stock_index_items = {"period","dividend","right",
+    "dividend_date","right_date","payment_date","right_payment_date","makeup_days"};
 
-    public TWSEService(String stockUrl) throws IOException{
+    public TWSEService(String stockUrl) throws IOException {
         this.stockUrl = stockUrl;
     }
     
-    private InputStream openURL(String urlPath) throws IOException{
+    private InputStream openURL(String urlPath) throws IOException {
         URL url = new URL(urlPath);
+        createTrustManager(url);
 
         // open a url connection.
         HttpsURLConnection url_connection =  (HttpsURLConnection) url.openConnection();
@@ -48,10 +54,53 @@ public class TWSEService {
         if(url_connection.getResponseCode() != 200){
             System.out.print("\nConnection Fail:"+url_connection.getResponseCode());
         }
+
         return url_connection.getInputStream();            
     }
+
+    public JSONObject getCompanyList() {
+        try {
+            InputStream URLstream = openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream,"BIG5"));
+            String line = null;
+            String alllines = ""; 
+            while ((line=buffer.readLine()) != null) {
+                alllines+=line;
+            }
+
+            Document doc = Jsoup.parse(new String(alllines.getBytes("UTF-8"), "UTF-8"));
+            Elements trs = doc.select("tr");
+            ArrayList<String> companyId = new ArrayList<>();
+            ArrayList<String> companyName = new ArrayList<>();
+            ArrayList<String> companyCreateDate = new ArrayList<>();
+            ArrayList<String> companyType = new ArrayList<>();
+            
+            String company_data[];
+            for(int i=0; i<trs.size(); i++){
+                Elements tds = trs.get(i).select("td");
+                if(tds.size() == 7){
+                    //<td bgcolor="#FAFAD2">1101　台泥</td>
+                    company_data = tds.get(0).text().split("　");
+                    //get stock company ID
+                    if(company_data[0].trim().length()==4){
+                        companyId.add(company_data[0].trim());
+                        companyName.add(company_data[1].trim());
+                        //<td bgcolor="#FAFAD2">1962/02/09</td>
+                        companyCreateDate.add(tds.get(2).text());
+                        //<td bgcolor="#FAFAD2">水泥工業</td>
+                        companyType.add(tds.get(4).text());
+                    }
+                }
+            }
+            
+            return responseSuccess(companyId,companyName,companyCreateDate,companyType);
+        }   
+        catch (IOException io){
+            return responseError(io.toString());
+        }
+    }
     
-    public JSONObject getStockTradeInfo(String type, Integer specific_date) {
+    public JSONObject getCompanyDividendPolicy() {
         try{
             InputStream URLStream = openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream,"UTF-8"));
@@ -62,15 +111,33 @@ public class TWSEService {
             while((line=buffer.readLine())!= null){
                 all_lines+=line;
             }
-            
-            if(type.equals("1")){
+
+            return CompanyDividendPolicyDataParsing(all_lines);  
+        }catch(IOException io){
+            return responseError(io.toString());
+        }
+    }
+    
+    public JSONObject getStockTradeInfo(String type, Integer specific_date) {
+        try {
+            InputStream URLStream = openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream,"UTF-8"));
+
+            String line=null;
+            String all_lines="";
+
+            while((line=buffer.readLine())!= null){
+                all_lines+=line;
+            }
+
+            if(type.equals("1")) {
                 return StockTradeInfoDaily(all_lines,specific_date);    
-            }else if(type.equals("2")){
+            }else if(type.equals("2")) {
                 return StockTradeInfoMonthly(all_lines,specific_date);
-            }else if(type.equals("3")){
+            }else if(type.equals("3")) {
                 return StockTradeInfoYearly(all_lines,specific_date);
             }
-            
+
             return responseError("get stock trade info error.");
         }catch(IOException io){
             return responseError(io.toString());
@@ -115,14 +182,15 @@ public class TWSEService {
                 stock_map.get("tradeVolume").add(tds.get(8).text());
                 stock_map.get("turnoverRate").add("");
                 stock_map.get("average").add("");
-                return responseSuccess(stock_map);
+                
+                return responseStockTradeInfoSuccess(stock_map);
             }
             return responseError("查無符合資料");
-        }catch(IOException io){
+        } catch(IOException io){
             return responseError(io.toString());
         }
     }
-
+    
     private JSONObject StockTradeInfoMonthly(String all_lines,Integer specific_month) {
         try{
             HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
@@ -158,7 +226,8 @@ public class TWSEService {
                 stock_map.get("turnoverRate").add(tds.get(8).text());
                 stock_map.get("closing").add("");
                 stock_map.get("openning").add("");
-                return responseSuccess(stock_map);
+                
+                return responseStockTradeInfoSuccess(stock_map);
             }
             return responseError("查無符合資料");
         }catch(IOException io){
@@ -175,22 +244,22 @@ public class TWSEService {
 
             Document doc =  Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
-            
+
             int temp_ymd=0;
             int specific_yyyy=Integer.parseInt(specific_year.toString().substring(0,4));
-            
+
             //{年度,成交股數,成交金額,成交筆數,最高價,日期,最低價,日期,收盤平均價}
             for(int i=trs.size()-1; i>1;i--){
                 Elements tds = trs.get(i).select("td");
-                
+
                 if(tds.size()!= 9)
                     continue;
-                
+
                 temp_ymd=1911+Integer.parseInt(tds.get(0).text().trim());
 
                 if(!(temp_ymd==specific_yyyy))
                     continue;
-                
+
                 stock_map.get("date").add(String.valueOf(temp_ymd));
                 stock_map.get("number").add(tds.get(1).text());
                 stock_map.get("amount").add(tds.get(2).text());
@@ -201,7 +270,8 @@ public class TWSEService {
                 stock_map.get("tradeVolume").add(tds.get(3).text());
                 stock_map.get("turnoverRate").add("");
                 stock_map.get("average").add(tds.get(8).text());
-                return responseSuccess(stock_map);
+                
+                return responseStockTradeInfoSuccess(stock_map);
             }
             return responseError("查無符合資料");
         }catch(IOException io){
@@ -209,13 +279,123 @@ public class TWSEService {
         }
     }
 
-    private JSONObject responseSuccess(HashMap<String,ArrayList<String>> stock_map){
+    private JSONObject CompanyDividendPolicyDataParsing(String all_lines){
+        try{
+            HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
+            for(int i=0; i<stock_index_items.length; i++){
+                stock_map.put(stock_index_items[i], new  ArrayList<String>());
+            }
+
+            //只需要取得股利政策的table底下的<li class="List(n)">
+            Document doc =  Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
+            Elements li_lists=doc.select("div.table-body-wrapper").get(0).select("li");
+
+            //html div element format ={股利所屬期間,現金股利,股票股利,除息日,除權日,現金股利發放日,股票股利發放,填息天數,股利合計}
+            for(int i=0; i<li_lists.size(); i++){
+                //要取得的八個div element外面包了一層div、第一個element "股利所屬期間" 另外又包了一層div，故加起來有10個div。
+                Elements tds = li_lists.get(i).select("div").get(0).select("div");
+                
+                if(tds.size()!=10)
+                    continue;
+
+                for(int j=2; j<tds.size(); j++){
+                    stock_map.get(stock_index_items[j-2]).add(tds.get(j).text());
+                }
+            }
+            
+            return responseCompanyDividendPolicySuccess(stock_map);
+        }catch(IOException io){
+            return responseError(io.toString());
+        }
+    }
+
+    /**
+     * 建立ssl憑證
+     * @param urlObj
+     * @return
+     */
+    private TrustManager createTrustManager(URL urlObj){
+        System.setProperty("java.protocol.handler.pkgs","com.sun.net.ssl.internal.www.protocol");
+        System.setProperty("javax.net.ssl.trustStore","keystore");
+        TrustManager trust = new X509TrustManager(){
+            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                return null;
+            }
+            public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType){
+            }
+            public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) throws java.security.cert.CertificateException {
+            }
+        };
+
+        SSLContext sslcontext;
+        try {
+            sslcontext = SSLContext.getInstance("TLS");
+            sslcontext.init(null, new TrustManager[] { trust }, null);
+            HttpsURLConnection.setDefaultSSLSocketFactory(sslcontext.getSocketFactory());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return trust;
+    }
+    
+    private JSONObject responseSuccess(ArrayList<String> companyId,ArrayList<String> companyName,ArrayList<String> companyCreateDate,ArrayList<String> companyType) {
         JSONArray allstockArray= new JSONArray();
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();
 
-        for (int i=0; i<stock_map.get("date").size(); i++){
+        for (int i=0; i<companyId.size();i++){
+            JSONObject tmpstock= new JSONObject();
+            tmpstock.element("ID",companyId.get(i)) ;
+            tmpstock.element("Name",companyName.get(i)) ;
+            tmpstock.element("上市/上櫃日期",companyCreateDate.get(i)) ;
+            tmpstock.element("產業別",companyType.get(i)) ;
+            allstockArray.add(tmpstock);
+        }
+        data.put("stockdata",allstockArray);
+
+        status_code.put("status", "success");
+        status_code.put("desc", "");
+
+        result.put("metadata", status_code);
+        result.put("data", data);
+
+        return result;
+    }
+    
+    private JSONObject responseCompanyDividendPolicySuccess(HashMap<String,ArrayList<String>> stock_map){
+        JSONArray allstockArray= new JSONArray();
+        JSONObject data = new JSONObject();
+        JSONObject status_code = new JSONObject();
+        JSONObject result = new JSONObject();
+        //make up dividend days 指的是填息天數。
+        String[] request_key = {"dividend_period","cash_dividend(dollors)","stock_dividend(shares)"
+        ,"EX-dividend_date","EX-right_date","dividend_payment_date","right_payment_date","make_up_dividend_days"};
+
+        for (int i=0; i<stock_map.get(stock_index_items[0]).size(); i++){
+            JSONObject tempstock= new JSONObject();
+            for(int j=0; j<request_key.length; j++){
+                tempstock.element(request_key[j],stock_map.get(stock_index_items[j]).get(i));
+            }
+            allstockArray.add(tempstock);
+        }
+        data.put("stockdata",allstockArray);
+
+        status_code.put("status", "success");
+        status_code.put("desc", "");
+
+        result.put("metadata", status_code);
+        result.put("data", data);
+        return result;
+    }
+    
+    private JSONObject responseStockTradeInfoSuccess(HashMap<String,ArrayList<String>> stock_map) {
+        JSONArray allstockArray= new JSONArray();
+        JSONObject data = new JSONObject();
+        JSONObject status_code = new JSONObject();
+        JSONObject result = new JSONObject();
+
+        for (int i=0; i<stock_map.get("date").size(); i++) {
             JSONObject tempstock= new JSONObject();
             tempstock.element("share_number(B)",stock_map.get("number").get(i));
             tempstock.element("share_amount(A)",stock_map.get("amount").get(i));
@@ -226,16 +406,17 @@ public class TWSEService {
             tempstock.element("closing_price(average)",stock_map.get("closing").get(i));
             tempstock.element("the_average_of_ShareAmount(A)_and_ShareNumber(B)",stock_map.get("average").get(i));
             tempstock.element("turnover_rate(%)",stock_map.get("turnoverRate").get(i));
-            
+
             allstockArray.add(tempstock);
         }
         data.put("stockdata",allstockArray);
-        
+
         status_code.put("status", "success");
         status_code.put("desc", "");
 
         result.put("metadata", status_code);
         result.put("data", data);
+        
         return result;
     }
 

@@ -80,7 +80,7 @@ public class TWSEService {
         }
     }
 
-    public JSONObject StockMaketIndexDataParsingListed(HashMap<String, ArrayList<String>> stock_map, String all_lines){
+    private JSONObject StockMaketIndexDataParsingListed(HashMap<String, ArrayList<String>> stock_map, String all_lines){
         try{
             Document doc =  Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements tables = doc.select("table");
@@ -110,7 +110,7 @@ public class TWSEService {
         }
     }
 
-    public JSONObject StockMaketIndexDataParsingOTC(HashMap<String, ArrayList<String>> stock_map, String all_lines){
+    private JSONObject StockMaketIndexDataParsingOTC(HashMap<String, ArrayList<String>> stock_map, String all_lines){
         try{
             Document doc =  Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements tables = doc.select("table");
@@ -148,7 +148,7 @@ public class TWSEService {
         }
     }
 
-    public JSONObject responseStockMarketIndexSuccess(HashMap<String,ArrayList<String>> stock_map){
+    private JSONObject responseStockMarketIndexSuccess(HashMap<String,ArrayList<String>> stock_map){
         JSONArray allstockArray= new JSONArray();
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();

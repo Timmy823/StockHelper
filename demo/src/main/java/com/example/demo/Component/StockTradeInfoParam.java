@@ -9,7 +9,7 @@ public class StockTradeInfoParam{
     private  String id;
 
     @NotEmpty(message = "type不可為空")
-    @SpecifiedValidator(strValues={"1","2"}, message="type必須為指定1或2或3")
+    @SpecifiedValidator(strValues={"1","2","3"}, message="type必須為指定1或2或3")
     private  String type;
 
     //@Past

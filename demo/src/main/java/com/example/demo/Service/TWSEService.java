@@ -89,24 +89,20 @@ public class TWSEService {
 
             String temp[];
             int temp_ymd=0;
-            boolean flag_ymd=false;
             
             //{日期,成交股數,成交金額,開盤價,最高價,最低價,收盤價,漲跌價差,成交筆數} trs資料第一行是中文標題欄位，故從i=2開始取得內文資料做處理。
             for(int i=2; i<trs.size();i++){
-                flag_ymd=false;
-            
                 Elements tds = trs.get(i).select("td");
             
                 //<td>111/07/01</td> 先處理日期字串中可能有異常空白問題"111 /07/01"，再以"/"分割年月日後後重新計算成西元年月日"20220701"。
-                if(tds.size()== 9){
-                    temp_ymd=19110000;
-                    temp= tds.get(0).text().replaceAll(" ", "").split("/");
-                    temp_ymd= temp_ymd+Integer.parseInt(temp[0])*10000+Integer.parseInt(temp[1])*100+Integer.parseInt(temp[2]); 
-                    
-                    flag_ymd=(temp_ymd==specified_date);
-                }
+                if(tds.size()!= 9)
+                    continue;
                 
-                if(!flag_ymd)
+                temp_ymd=19110000;
+                temp= tds.get(0).text().replaceAll(" ", "").split("/");
+                temp_ymd= temp_ymd+Integer.parseInt(temp[0])*10000+Integer.parseInt(temp[1])*100+Integer.parseInt(temp[2]); 
+                
+                if(!(temp_ymd==specified_date))
                     continue;
 
                 stock_map.get("date").add(String.valueOf(temp_ymd));
@@ -139,21 +135,17 @@ public class TWSEService {
 
             int temp_ymd=0;
             int specified_yyyymm=Integer.parseInt(specified_month.toString().substring(0,6));
-            
-            boolean flag_ymd=false;
 
             //{年度,月份,最高價,最低價,加權(A/B)平均價,成交筆數,成交金額(A),成交股數(B),週轉率(%)}
             for(int i=trs.size()-1; i>1;i--){
-                flag_ymd=false;
-                
                 Elements tds = trs.get(i).select("td");
 
-                if(tds.size()== 9){
-                    temp_ymd=(1911+Integer.parseInt(tds.get(0).text().trim()))*100+Integer.parseInt(tds.get(1).text().trim());
-                    flag_ymd=(temp_ymd==specified_yyyymm);
-                }
-                
-                if(!flag_ymd)
+                if(tds.size()!= 9)
+                    continue;
+
+                temp_ymd=(1911+Integer.parseInt(tds.get(0).text().trim()))*100+Integer.parseInt(tds.get(1).text().trim());
+
+                if(!(temp_ymd==specified_yyyymm))
                     continue;
 
                 stock_map.get("date").add(String.valueOf(temp_ymd));

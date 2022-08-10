@@ -106,21 +106,22 @@ public class TWSEService {
                     flag_ymd=(temp_ymd==specified_date);
                 }
                 
-                if(flag_ymd){
-                    stock_map.get("date").add(String.valueOf(temp_ymd));
-                    stock_map.get("number").add(tds.get(1).text());
-                    stock_map.get("amount").add(tds.get(2).text());
-                    stock_map.get("openning").add(tds.get(3).text());
-                    stock_map.get("highest").add(tds.get(4).text());
-                    stock_map.get("lowest").add(tds.get(5).text());
-                    stock_map.get("closing").add(tds.get(6).text());
-                    stock_map.get("tradeVolume").add(tds.get(8).text());
-                    stock_map.get("turnoverRate").add("");
-                    stock_map.get("average").add("");
-                    break;
-                }
+                if(!flag_ymd)
+                    continue;
+
+                stock_map.get("date").add(String.valueOf(temp_ymd));
+                stock_map.get("number").add(tds.get(1).text());
+                stock_map.get("amount").add(tds.get(2).text());
+                stock_map.get("openning").add(tds.get(3).text());
+                stock_map.get("highest").add(tds.get(4).text());
+                stock_map.get("lowest").add(tds.get(5).text());
+                stock_map.get("closing").add(tds.get(6).text());
+                stock_map.get("tradeVolume").add(tds.get(8).text());
+                stock_map.get("turnoverRate").add("");
+                stock_map.get("average").add("");
+                return responseSuccess(stock_map);
             }
-            return responseSuccess(stock_map);
+            return responseError("查無符合資料");
         }catch(IOException io){
             return responseError(io.toString());
         }
@@ -152,22 +153,23 @@ public class TWSEService {
                     flag_ymd=(temp_ymd==specified_yyyymm);
                 }
                 
-                if(flag_ymd){
-                    stock_map.get("date").add(String.valueOf(temp_ymd));
-                    stock_map.get("highest").add(tds.get(2).text());
-                    stock_map.get("lowest").add(tds.get(3).text());
-                    stock_map.get("average").add(tds.get(4).text());
-                    stock_map.get("tradeVolume").add(tds.get(5).text());
-                    stock_map.get("amount").add(tds.get(6).text());
-                    stock_map.get("number").add(tds.get(7).text());
-                    stock_map.get("turnoverRate").add(tds.get(8).text());
-                    stock_map.get("closing").add("");
-                    stock_map.get("openning").add("");
-                    break;
-                }
+                if(!flag_ymd)
+                    continue;
+                    
+                stock_map.get("date").add(String.valueOf(temp_ymd));
+                stock_map.get("highest").add(tds.get(2).text());
+                stock_map.get("lowest").add(tds.get(3).text());
+                stock_map.get("average").add(tds.get(4).text());
+                stock_map.get("tradeVolume").add(tds.get(5).text());
+                stock_map.get("amount").add(tds.get(6).text());
+                stock_map.get("number").add(tds.get(7).text());
+                stock_map.get("turnoverRate").add(tds.get(8).text());
+                stock_map.get("closing").add("");
+                stock_map.get("openning").add("");
+                return responseSuccess(stock_map);
             }
 
-            return responseSuccess(stock_map);
+            return responseError("查無符合資料");
         }catch(IOException io){
             return responseError(io.toString());
         }
@@ -199,21 +201,22 @@ public class TWSEService {
                     flag_ymd=(temp_ymd==specified_yyyy);
                 }
                 
-                if(flag_ymd){
-                    stock_map.get("date").add(String.valueOf(temp_ymd));
-                    stock_map.get("number").add(tds.get(1).text());
-                    stock_map.get("amount").add(tds.get(2).text());
-                    stock_map.get("openning").add("");
-                    stock_map.get("highest").add(tds.get(4).text());
-                    stock_map.get("lowest").add(tds.get(6).text());
-                    stock_map.get("closing").add("");
-                    stock_map.get("tradeVolume").add(tds.get(3).text());
-                    stock_map.get("turnoverRate").add("");
-                    stock_map.get("average").add(tds.get(8).text());
-                    break;
-                }
+                if(!flag_ymd)
+                    continue;
+
+                stock_map.get("date").add(String.valueOf(temp_ymd));
+                stock_map.get("number").add(tds.get(1).text());
+                stock_map.get("amount").add(tds.get(2).text());
+                stock_map.get("openning").add("");
+                stock_map.get("highest").add(tds.get(4).text());
+                stock_map.get("lowest").add(tds.get(6).text());
+                stock_map.get("closing").add("");
+                stock_map.get("tradeVolume").add(tds.get(3).text());
+                stock_map.get("turnoverRate").add("");
+                stock_map.get("average").add(tds.get(8).text());
+                return responseSuccess(stock_map);
             }
-            return responseSuccess(stock_map);
+            return responseError("查無符合資料");
         }catch(IOException io){
             return responseError(io.toString());
         }

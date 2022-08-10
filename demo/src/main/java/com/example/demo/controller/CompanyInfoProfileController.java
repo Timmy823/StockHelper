@@ -14,7 +14,7 @@ import com.example.demo.Service.CompanyInfoProfileService;
 public class CompanyInfoProfileController {
 
     @GetMapping("/twse/getCompanyProfile")
-    public JSONObject getCompanyTradeInfo(@RequestBody JSONObject input,CompanyInfoProfileService stock){
+    public JSONObject getCompanyInfoProfile(@RequestBody JSONObject input,CompanyInfoProfileService stock){
         String stockUrl="";
     
         Integer stockid =input.getInt("id");
@@ -24,6 +24,6 @@ public class CompanyInfoProfileController {
         }catch(IOException e){
             e.printStackTrace();
         }   
-        return stock.getCompanyProfile();  
+        return stock.getCompanyInfoProfile();  
     }
 }

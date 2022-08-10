@@ -69,7 +69,7 @@ public class TWSEService {
         }
     }
 
-    public JSONObject CompanyDividendPolicyDataParsing(String all_lines){
+    private JSONObject CompanyDividendPolicyDataParsing(String all_lines){
         try{
             HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
             for(int i=0; i<stock_index_items.length; i++){
@@ -98,7 +98,7 @@ public class TWSEService {
         }
     }
 
-    public JSONObject responseCompanyDividendPolicySuccess(HashMap<String,ArrayList<String>> stock_map){
+    private JSONObject responseCompanyDividendPolicySuccess(HashMap<String,ArrayList<String>> stock_map){
         JSONArray allstockArray= new JSONArray();
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();

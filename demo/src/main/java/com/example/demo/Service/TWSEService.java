@@ -27,6 +27,7 @@ public class TWSEService {
             for(int i=0; i<stock_revenue_Yearly_items.length; i++){
                 stock_map.put(stock_revenue_Yearly_items[i], new  ArrayList<String>());
             }
+            //紀錄stock_revenue_Yearly_items 位置
             int count;
 
             //DriverServer使用System.setProperty 來指定路徑

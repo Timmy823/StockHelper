@@ -26,7 +26,7 @@ public class StockInfoProfileService {
         this.stockUrl = stockUrl;
     }
 
-    public void companyParseToList(String all_lines){
+    private void companyParseToList(String all_lines){
         try{
             String temp [];
             Document doc= Jsoup.parse(new String (all_lines.getBytes("UTF-8"),"UTF-8"));

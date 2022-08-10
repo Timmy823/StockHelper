@@ -3,7 +3,7 @@ package com.example.demo.Component;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.Size;
 
-import com.example.demo.controller.TWSEController;
+import com.example.demo.Controller.TWSEController;
 
 public class CompanyDividendPolicyParam extends TWSEController{
     private  String id;

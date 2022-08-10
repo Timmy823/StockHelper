@@ -58,7 +58,7 @@ public class TWSEService {
 
     public JSONObject getCompanyList() {
         try {
-            InputStream URLstream = openURL(this.twseUrl);
+            InputStream URLstream = openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream,"BIG5"));
             String line = null;
             String alllines = ""; 
@@ -227,7 +227,7 @@ public class TWSEService {
         return result;
     }
 
-    private JSONObject responseError(String error_msg) {
+    public JSONObject responseError(String error_msg) {
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();

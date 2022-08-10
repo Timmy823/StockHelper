@@ -168,7 +168,6 @@ public class TWSEService {
                 stock_map.get("openning").add("");
                 return responseSuccess(stock_map);
             }
-
             return responseError("查無符合資料");
         }catch(IOException io){
             return responseError(io.toString());
@@ -188,22 +187,18 @@ public class TWSEService {
             int temp_ymd=0;
             int specified_yyyy=Integer.parseInt(specified_year.toString().substring(0,4));
             
-            boolean flag_ymd=false;
-            
             //{年度,成交股數,成交金額,成交筆數,最高價,日期,最低價,日期,收盤平均價}
             for(int i=trs.size()-1; i>1;i--){
-                flag_ymd=false;
-                
                 Elements tds = trs.get(i).select("td");
                 
-                if(tds.size()== 9){
-                    temp_ymd=1911+Integer.parseInt(tds.get(0).text().trim());
-                    flag_ymd=(temp_ymd==specified_yyyy);
-                }
-                
-                if(!flag_ymd)
+                if(tds.size()!= 9)
                     continue;
+                
+                temp_ymd=1911+Integer.parseInt(tds.get(0).text().trim());
 
+                if(!(temp_ymd==specified_yyyy))
+                    continue;
+                
                 stock_map.get("date").add(String.valueOf(temp_ymd));
                 stock_map.get("number").add(tds.get(1).text());
                 stock_map.get("amount").add(tds.get(2).text());

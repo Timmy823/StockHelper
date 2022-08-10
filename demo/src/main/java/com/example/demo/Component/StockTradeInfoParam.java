@@ -2,7 +2,6 @@ package com.example.demo.Component;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
 
 public class StockTradeInfoParam{
 
@@ -10,7 +9,7 @@ public class StockTradeInfoParam{
     private  String id;
 
     @NotEmpty(message = "type不可為空")
-    @Size(max=3,min=1,message = "type為1~3")
+    @SpecifiedValidator(strValues={"1","2"}, message="type必須為指定1或2或3")
     private  String type;
 
     //@Past

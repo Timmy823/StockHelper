@@ -77,7 +77,7 @@ public class TWSEService {
         }
     }
 
-    public JSONObject StockTradeInfoDaily(String all_lines, Integer specified_date) {
+    private JSONObject StockTradeInfoDaily(String all_lines, Integer specified_date) {
         try{
             HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
             for(int i=0; i<stock_info_items.length; i++){
@@ -127,7 +127,7 @@ public class TWSEService {
         }
     }
 
-    public JSONObject StockTradeInfoMonthly(String all_lines,Integer specified_month) {
+    private JSONObject StockTradeInfoMonthly(String all_lines,Integer specified_month) {
         try{
             HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
             for(int i=0; i<stock_info_items.length; i++){
@@ -155,7 +155,7 @@ public class TWSEService {
                 
                 if(!flag_ymd)
                     continue;
-                    
+
                 stock_map.get("date").add(String.valueOf(temp_ymd));
                 stock_map.get("highest").add(tds.get(2).text());
                 stock_map.get("lowest").add(tds.get(3).text());
@@ -175,7 +175,7 @@ public class TWSEService {
         }
     }
 
-    public JSONObject StockTradeInfoYearly(String all_lines, Integer specified_year) {
+    private JSONObject StockTradeInfoYearly(String all_lines, Integer specified_year) {
         try{
             HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
             for(int i=0; i<stock_info_items.length; i++){
@@ -222,7 +222,7 @@ public class TWSEService {
         }
     }
 
-    public JSONObject responseSuccess(HashMap<String,ArrayList<String>> stock_map){
+    private JSONObject responseSuccess(HashMap<String,ArrayList<String>> stock_map){
         JSONArray allstockArray= new JSONArray();
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();

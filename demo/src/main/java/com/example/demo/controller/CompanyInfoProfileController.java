@@ -1,4 +1,4 @@
-package com.example.demo.controller;
+package com.example.demo.Controller;
 
 import net.sf.json.JSONObject;
 
@@ -8,20 +8,19 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.Service.StockInfoProfileService;
+import com.example.demo.Service.CompanyInfoProfileService;
     
-
 @RestController
-public class StockInfoProfileController {
+public class CompanyInfoProfileController {
 
     @GetMapping("/twse/getCompanyProfile")
-    public JSONObject getStockTradeInfo(@RequestBody JSONObject input,StockInfoProfileService stock){
+    public JSONObject getCompanyTradeInfo(@RequestBody JSONObject input,CompanyInfoProfileService stock){
         String stockUrl="";
     
         Integer stockid =input.getInt("id");
         stockUrl="https://tw.stock.yahoo.com/quote/"+stockid+"/profile";
         try{
-            stock= new StockInfoProfileService(stockUrl);  
+            stock= new CompanyInfoProfileService(stockUrl);  
         }catch(IOException e){
             e.printStackTrace();
         }   

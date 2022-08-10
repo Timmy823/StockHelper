@@ -12,9 +12,7 @@ import org.jsoup.select.Elements;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-
-public class StockInfoProfileService {
-
+public class CompanyInfoProfileService {
     String stockUrl;
     ArrayList<String> company_list = new ArrayList<>();
 
@@ -22,7 +20,7 @@ public class StockInfoProfileService {
     JSONObject data = new JSONObject();
     JSONObject result = new JSONObject();
 
-    public StockInfoProfileService(String stockUrl) throws IOException{
+    public CompanyInfoProfileService(String stockUrl) throws IOException{
         this.stockUrl = stockUrl;
     }
 

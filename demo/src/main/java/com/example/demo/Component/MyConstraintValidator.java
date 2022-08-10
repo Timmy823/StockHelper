@@ -3,12 +3,12 @@ package com.example.demo.Component;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
 
-public class MyConstraintValidator implements ConstraintValidator<SpecifiedValidator,Object> {
+public class MyConstraintValidator implements ConstraintValidator<SpecificValidator,Object> {
     private String[] strValues;
     private int[] intValues;
 
     @Override
-    public void initialize(SpecifiedValidator constraintAnnotation) {
+    public void initialize(SpecificValidator constraintAnnotation) {
         strValues = constraintAnnotation.strValues();
         intValues = constraintAnnotation.intValues();
     }

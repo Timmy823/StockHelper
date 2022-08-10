@@ -14,7 +14,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Documented
 @Constraint(validatedBy = {MyConstraintValidator.class})
-public @interface SpecifiedValidator {
+public @interface SpecificValidator {
     String message() default "必須為指定值";
     String[] strValues() default{};
     int[] intValues() default {};

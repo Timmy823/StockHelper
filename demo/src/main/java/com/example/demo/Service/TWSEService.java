@@ -51,7 +51,7 @@ public class TWSEService {
         return url_connection.getInputStream();            
     }
     
-    public JSONObject getStockTradeInfo(String type, Integer specified_date) {
+    public JSONObject getStockTradeInfo(String type, Integer specific_date) {
         try{
             InputStream URLStream = openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream,"UTF-8"));
@@ -64,20 +64,20 @@ public class TWSEService {
             }
             
             if(type.equals("1")){
-                return StockTradeInfoDaily(all_lines,specified_date);    
+                return StockTradeInfoDaily(all_lines,specific_date);    
             }else if(type.equals("2")){
-                return StockTradeInfoMonthly(all_lines,specified_date);
+                return StockTradeInfoMonthly(all_lines,specific_date);
             }else if(type.equals("3")){
-                return StockTradeInfoYearly(all_lines,specified_date);
-            }else{
-                return responseError("get stock trade info error.");
+                return StockTradeInfoYearly(all_lines,specific_date);
             }
+            
+            return responseError("get stock trade info error.");
         }catch(IOException io){
             return responseError(io.toString());
         }
     }
 
-    private JSONObject StockTradeInfoDaily(String all_lines, Integer specified_date) {
+    private JSONObject StockTradeInfoDaily(String all_lines, Integer specific_date) {
         try{
             HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
             for(int i=0; i<stock_info_items.length; i++){
@@ -102,7 +102,7 @@ public class TWSEService {
                 temp= tds.get(0).text().replaceAll(" ", "").split("/");
                 temp_ymd= temp_ymd+Integer.parseInt(temp[0])*10000+Integer.parseInt(temp[1])*100+Integer.parseInt(temp[2]); 
                 
-                if(!(temp_ymd==specified_date))
+                if(!(temp_ymd==specific_date))
                     continue;
 
                 stock_map.get("date").add(String.valueOf(temp_ymd));
@@ -123,7 +123,7 @@ public class TWSEService {
         }
     }
 
-    private JSONObject StockTradeInfoMonthly(String all_lines,Integer specified_month) {
+    private JSONObject StockTradeInfoMonthly(String all_lines,Integer specific_month) {
         try{
             HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
             for(int i=0; i<stock_info_items.length; i++){
@@ -134,7 +134,7 @@ public class TWSEService {
             Elements trs = doc.select("tr");
 
             int temp_ymd=0;
-            int specified_yyyymm=Integer.parseInt(specified_month.toString().substring(0,6));
+            int specific_yyyymm=Integer.parseInt(specific_month.toString().substring(0,6));
 
             //{年度,月份,最高價,最低價,加權(A/B)平均價,成交筆數,成交金額(A),成交股數(B),週轉率(%)}
             for(int i=trs.size()-1; i>1;i--){
@@ -145,7 +145,7 @@ public class TWSEService {
 
                 temp_ymd=(1911+Integer.parseInt(tds.get(0).text().trim()))*100+Integer.parseInt(tds.get(1).text().trim());
 
-                if(!(temp_ymd==specified_yyyymm))
+                if(!(temp_ymd==specific_yyyymm))
                     continue;
 
                 stock_map.get("date").add(String.valueOf(temp_ymd));
@@ -166,7 +166,7 @@ public class TWSEService {
         }
     }
 
-    private JSONObject StockTradeInfoYearly(String all_lines, Integer specified_year) {
+    private JSONObject StockTradeInfoYearly(String all_lines, Integer specific_year) {
         try{
             HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
             for(int i=0; i<stock_info_items.length; i++){
@@ -177,7 +177,7 @@ public class TWSEService {
             Elements trs = doc.select("tr");
             
             int temp_ymd=0;
-            int specified_yyyy=Integer.parseInt(specified_year.toString().substring(0,4));
+            int specific_yyyy=Integer.parseInt(specific_year.toString().substring(0,4));
             
             //{年度,成交股數,成交金額,成交筆數,最高價,日期,最低價,日期,收盤平均價}
             for(int i=trs.size()-1; i>1;i--){
@@ -188,7 +188,7 @@ public class TWSEService {
                 
                 temp_ymd=1911+Integer.parseInt(tds.get(0).text().trim());
 
-                if(!(temp_ymd==specified_yyyy))
+                if(!(temp_ymd==specific_yyyy))
                     continue;
                 
                 stock_map.get("date").add(String.valueOf(temp_ymd));

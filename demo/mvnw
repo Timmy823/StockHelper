@@ -171,7 +171,7 @@ find_maven_basedir() {
 
   if [ -z "$1" ]
   then
-    echo "Path not specified to find_maven_basedir"
+    echo "Path not specific to find_maven_basedir"
     return 1
   fi
 

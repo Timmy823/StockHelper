@@ -1,4 +1,4 @@
-package com.example.demo.Handle;
+package com.example.demo.Handler;
 
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;

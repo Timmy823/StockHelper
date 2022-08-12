@@ -26,7 +26,7 @@ public class CreateLoginLogTable {
     */   
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="login_seqId", unique = true, nullable = false, length = 20)
+    @Column(name="seqid", unique = true, nullable = false, length = 20)
     private Long seqId;
 
     @ManyToOne(fetch = FetchType.LAZY)//多得一方延遲載入
@@ -36,15 +36,15 @@ public class CreateLoginLogTable {
     @Column(name="login_type", nullable = true, length = 20)
     private String type;
         
-    @Column(name="login_createTime", nullable = false, length = 10) //yyyymmddss
+    @Column(name="createTime", nullable = false, length = 10) //yyyymmddss
     private Integer createTime;
     
-    @Column(name="login_createUser", nullable = false, length = 10)
+    @Column(name="createUser", nullable = false, length = 10)
     private String createUser;
 
-    @Column(name="login_updateTime", nullable = true, length = 10)
+    @Column(name="updateTime", nullable = true, length = 10)
     private Integer updateTime;
 
-    @Column(name="login_updateUser", nullable = true, length = 10)
+    @Column(name="updateUser", nullable = true, length = 10)
     private String updateUser;
 }

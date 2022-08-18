@@ -23,8 +23,8 @@ public class MemberService {
             //send email to customer
             mail_message.setFrom("stockhelper.service@gmail.com");
             mail_message.setTo(customer_email);
-            mail_message.setSubject("主旨：【stockhelpler】驗證碼");
-            mail_message.setText("您好，\n\n您使用的stockhelpler驗證碼為 "+ salt_number+ " 。");
+            mail_message.setSubject("主旨：【stockhelper】驗證碼");
+            mail_message.setText("您好，\n\n您使用的stockhelper驗證碼為 "+ salt_number+ " 。");
 
             mailSender().send(mail_message);
             return responseEmailCertification(salt_number);

@@ -19,7 +19,7 @@ public class MemberController {
     @Autowired
     MemberService memberService;
 
-    @GetMapping("/member/createLogin")
+    @GetMapping("/member/searchMemberAndCreateLogin")
     public JSONObject CheckAndCreateLogin(@Valid @RequestBody CreateLoginParam input) {
         try{
         return memberService.CheckMemberAndCreateLogin(input);

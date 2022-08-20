@@ -1,8 +1,6 @@
 package com.example.demo.Component;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 import javax.validation.Constraint;
 import javax.validation.Payload;
@@ -13,11 +11,12 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({METHOD, FIELD, ANNOTATION_TYPE, CONSTRUCTOR, PARAMETER})
 @Retention(RUNTIME)
 @Documented
-@Constraint(validatedBy = {MyConstraintValidator.class})
+@Constraint(validatedBy = {MyConstraintValidator.class, MemberUpdateValidator.class})
 public @interface SpecificValidator {
-    String message() default "必須為指定值";
+    String message() default "";
     String[] strValues() default{};
     int[] intValues() default {};
+    String[] objectKeys() default {};
 
    /*
    使用指定枚舉

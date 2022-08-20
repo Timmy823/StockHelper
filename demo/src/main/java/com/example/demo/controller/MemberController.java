@@ -6,7 +6,7 @@ import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,10 +19,10 @@ public class MemberController {
     @Autowired
     MemberService memberService;
 
-    @GetMapping("/member/searchMemberAndCreateLogin")
-    public JSONObject CheckAndCreateLogin(@Valid @RequestBody CreateLoginParam input) {
+    @PostMapping("/member/searchMember")
+    public JSONObject CheckMemberAndCreateLogin(@Valid @RequestBody CreateLoginParam input) {
         try{
-        return memberService.CheckMemberAndCreateLogin(input);
+            return memberService.CheckMemberAndCreateLogin(input);
         }catch(Exception io){
             return memberService.responseError(io.toString());
         }

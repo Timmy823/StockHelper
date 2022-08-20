@@ -1,11 +1,14 @@
 package com.example.demo.Service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.stereotype.Service;
+
+import com.example.demo.Repository.MemberRespository;
 
 import java.util.Properties;
 import java.util.Random;
@@ -14,8 +17,15 @@ import net.sf.json.JSONObject;
 
 @Service
 public class MemberService {
+    @Autowired
+    private MemberRespository MemberRepo;
+
     public JSONObject SendEmailCertification(String customer_email) {
         try {    
+            //檢核會員帳號是否存在
+            if(MemberRepo.existByAccount(customer_email) == 0) 
+                return responseEmailCertification("error", "查無此會員帳號", "");
+            
             //create random 6 numbers and letters
             String salt_number = getSaltString(6);
             SimpleMailMessage mail_message = new SimpleMailMessage();
@@ -27,7 +37,7 @@ public class MemberService {
             mail_message.setText("您好，\n\n您使用的stockhelper驗證碼為 "+ salt_number+ " 。");
 
             mailSender().send(mail_message);
-            return responseEmailCertification(salt_number);
+            return responseEmailCertification("OK", "", salt_number);
         } catch (MailException e) {
             return responseError(e.getMessage());
         }
@@ -61,12 +71,13 @@ public class MemberService {
         return salt.toString();
     }
 
-    private JSONObject responseEmailCertification(String saltString) {
+    private JSONObject responseEmailCertification(String statusString,String data_message, String saltString) {
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();
-
-        data.put("certification_code",saltString);
+        data.put("send_mail_status:", statusString);
+        data.put("message", data_message);
+        data.put("certification_code", saltString);
 
         status_code.put("status", "success");
         status_code.put("desc", "");

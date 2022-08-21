@@ -14,8 +14,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Entity
 @Data
-@RequiredArgsConstructor //final 修飾變量為特定參數
-@Table(name="members")
+@Table(name="member")
 @EntityListeners(AuditingEntityListener.class)
 public class MemberModel {
     @Id

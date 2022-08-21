@@ -14,11 +14,11 @@ import org.springframework.stereotype.Component;
 @Component
 @Entity
 @Data
-@RequiredArgsConstructor //final 修飾變量為特定參數
-@Table(name="stock_members")
+@Table(name="member")
 @EntityListeners(AuditingEntityListener.class)
 public class MemberModel {
     @Id
+    @NonNull
     @GeneratedValue(generator = "uuid2")
     @GenericGenerator(name = "uuid2", strategy = "uuid2")
     @Column(name="mid", unique = true, columnDefinition = "BINARY(36)")
@@ -26,7 +26,7 @@ public class MemberModel {
 
     @NonNull
     @NotBlank
-    @Column(name="member_account", nullable = false, length = 350)
+    @Column(name="member_account", nullable = false,length = 350)    
     private String member_account;
     
     @NonNull
@@ -39,7 +39,7 @@ public class MemberModel {
     @Column(name="name", nullable = false, length = 50)
     private String name;
 
-    @Column(name="telephone", nullable = true, length = 11)
+    @Column(name="telephone", length = 11)
     private String telephone;
 
     @NonNull
@@ -49,18 +49,20 @@ public class MemberModel {
 
     @CreatedDate
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="create_time", updatable = false)
+    @Column(name="create_time", nullable = false, updatable = false)
     private Date create_time;
     
-    @Column(name="create_user", updatable = false, nullable = true, length = 10)
+    @NonNull
+    @Column(name="create_user", nullable = false, updatable = false, length = 10)
     private String create_user;
 
     @LastModifiedDate
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="update_time")
+    @Column(name="update_time", nullable = false)
     private Date update_time;
 
-    @Column(name="update_user", updatable = true, nullable = true, length = 10)
+    @NonNull
+    @Column(name="update_user", nullable = false, length = 10)
     private String update_user;
 
     public MemberModel() {

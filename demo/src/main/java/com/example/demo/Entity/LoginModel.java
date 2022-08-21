@@ -18,12 +18,6 @@ import org.springframework.stereotype.Component;
 @Table(name="stock_login_log")
 @EntityListeners(AuditingEntityListener.class)
 public class LoginModel {
-    /*
-    * sequence number: seqId.format=YYYYMMDDSSNNNN
-    * mid
-    * login type:
-    *
-    */   
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="sequence_id", unique = true, nullable = false, length = 20)
@@ -44,11 +38,11 @@ public class LoginModel {
     @Column(name="create_user", updatable = false, nullable = true, length = 10)
     private String create_user;
 
-    @Temporal(TemporalType.TIMESTAMP)
     @LastModifiedDate
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name="update_time")
     private Date update_time;
 
-    @Column(name="update_user", nullable = true, length = 10, updatable=true)
+    @Column(name="update_user", updatable = true, nullable = true, length = 10)
     private String update_user;
 }    

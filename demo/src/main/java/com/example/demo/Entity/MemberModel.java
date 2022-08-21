@@ -55,12 +55,12 @@ public class MemberModel {
     @Column(name="create_user", updatable = false, nullable = true, length = 10)
     private String create_user;
 
-    @Temporal(TemporalType.TIMESTAMP)
     @LastModifiedDate
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name="update_time")
     private Date update_time;
 
-    @Column(name="update_user", nullable = true, length = 10, updatable=true)
+    @Column(name="update_user", updatable = true, nullable = true, length = 10)
     private String update_user;
 
     public MemberModel() {

@@ -12,16 +12,15 @@ public class MemberUpdateValidator implements ConstraintValidator<SpecificValida
     private String name;
     private String telephone;
     private String verification;
-    
+
     @Override
     public boolean isValid(JSONObject value, ConstraintValidatorContext context) {
+        //TEL正則式
         Pattern pattern = Pattern.compile("(09)+[\\d]{8}");
-
         password = value.getString("password");
         name = value.getString("member_name");
         telephone = value.getString("telephone");
         verification = value.getString("verification");
-        System.out.println("password: "+password);
 
         //必須其一有值，並針對有值的欄位做驗證
         if(password.length() == 0 && name.length() == 0 && telephone.length() == 0 && verification.length() == 0) {

@@ -13,7 +13,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Documented
 @Constraint(validatedBy = {MyConstraintValidator.class, MemberUpdateValidator.class})
 public @interface SpecificValidator {
-    String message() default "";
+    String message() default "request body 參數錯誤";
     String[] strValues() default{};
     int[] intValues() default {};
     String[] objectKeys() default {};

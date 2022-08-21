@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 @Entity //將這個class 認定為table User
 @Data
 @RequiredArgsConstructor //final 修飾變量為特定參數
-@Table(name="stock_login_log")
+@Table(name="login")
 @EntityListeners(AuditingEntityListener.class)
 public class LoginModel {
     /*

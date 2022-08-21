@@ -19,9 +19,9 @@ public class MemberController {
     @Autowired
     MemberService memberService;
     @PostMapping("/member/createMember")
-    public JSONObject CheckAndCreateMember(@Valid @RequestBody MemberRegisterParam input) {
+    public JSONObject createMember(@Valid @RequestBody MemberRegisterParam input) {
         try{
-        return memberService.CheckAndCreateMember(input);
+            return memberService.createMember(input);
         }catch(Exception io){
             return memberService.responseError(io.toString());
         }

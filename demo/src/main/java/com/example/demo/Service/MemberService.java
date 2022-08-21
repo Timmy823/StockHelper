@@ -4,8 +4,6 @@ import com.example.demo.Component.MemberRegisterParam;
 import com.example.demo.Entity.MemberModel;
 import com.example.demo.Repository.MemberRespository;
 
-import java.util.UUID;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +16,7 @@ public class MemberService {
     public MemberService() {
     }
     
-    public JSONObject CheckAndCreateMember(MemberRegisterParam data) {
+    public JSONObject createMember(MemberRegisterParam data) {
         //檢核會員帳號是否存在
         if((MemberRepo.FindByAccount(data.getAccount())) != null) {
             return responseCreateMemberSuccess("error","會員帳號已創建");

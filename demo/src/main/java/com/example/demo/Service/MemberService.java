@@ -21,7 +21,7 @@ public class MemberService {
          //檢核會員帳號是否存在
         MemberModel member = MemberRepo.FindByAccount(data.getAccount());
         if(member == null) {
-            return responseCheckMemberSuccess("error", "會員帳號或密碼錯誤");
+            return responseError("會員帳號或密碼錯誤");
         }
 
         //if input field not null ,and update member field
@@ -36,15 +36,13 @@ public class MemberService {
         member.setUpdate_user("system");
         MemberRepo.save(member);
 
-        return responseUpdateMemberSuccess("OK", "");
+        return responseUpdateMemberSuccess();
     }
 
-    private JSONObject responseUpdateMemberSuccess(String update_status, String data_message){
+    private JSONObject responseUpdateMemberSuccess(){
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();
-        data.put("update_member_status", update_status);
-        data.put("message", data_message);
 
         status_code.put("status", "success");
         status_code.put("desc", "");

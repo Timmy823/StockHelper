@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 @Entity
 @Data
 @RequiredArgsConstructor //final 修飾變量為特定參數
-@Table(name="stock_members")
+@Table(name="member")
 @EntityListeners(AuditingEntityListener.class)
 public class MemberModel {
     @Id
@@ -55,12 +55,12 @@ public class MemberModel {
     @Column(name="create_user", updatable = false, nullable = true, length = 10)
     private String create_user;
 
-    @Temporal(TemporalType.TIMESTAMP)
     @LastModifiedDate
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name="update_time")
     private Date update_time;
 
-    @Column(name="update_user", nullable = true, length = 10, updatable=true)
+    @Column(name="update_user", updatable = true, nullable = true, length = 10)
     private String update_user;
 
     public MemberModel() {

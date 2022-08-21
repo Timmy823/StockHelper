@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor //final 修飾變量為特定參數
 @Table(name="login")
 @EntityListeners(AuditingEntityListener.class)
-public class LoginModel { 
+public class LoginLogModel { 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="sequence_id", unique = true, nullable = false, length = 20)

@@ -46,7 +46,7 @@ public class MemberService {
         return responseCreateMemberSuccess("OK","");
     }
 
-    public JSONObject responseCreateMemberSuccess(String create_status, String create_message){
+    private JSONObject responseCreateMemberSuccess(String create_status, String create_message){
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();

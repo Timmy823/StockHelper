@@ -2,8 +2,6 @@ package com.example.demo.Entity;
 
 import lombok.*;
 
-import com.example.demo.Entity.FavoriteListsId;
-
 import java.util.Date;
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
@@ -11,11 +9,9 @@ import javax.validation.constraints.NotBlank;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import org.springframework.stereotype.Component;
 
 @Entity
 @Data
-@RequiredArgsConstructor //final 修飾變量為特定參數
 @Table(name="stock_favorite")
 @EntityListeners(AuditingEntityListener.class)
 public class FavoriteListsModel {

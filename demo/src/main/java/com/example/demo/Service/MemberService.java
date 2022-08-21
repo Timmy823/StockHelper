@@ -24,16 +24,8 @@ public class MemberService {
             return responseCreateMemberSuccess("error","會員帳號已創建");
         }
 
-        //member_id 重複就重新取得新uuid
-        String uuid=UUID.randomUUID().toString().replace("-", "");
-        while(MemberRepo.existByUUID(uuid) != 0) {
-            uuid=UUID.randomUUID().toString().replace("-", "");
-            break;
-        }
-
         //add member data
         MemberModel memberModel = new MemberModel();
-        memberModel.setMid(uuid);
         memberModel.setMember_account(data.getAccount());
         memberModel.setName(data.getName());
         memberModel.setMember_passwd(data.getPassword());

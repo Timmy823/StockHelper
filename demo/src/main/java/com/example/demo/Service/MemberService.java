@@ -19,7 +19,7 @@ public class MemberService {
     public JSONObject createMember(MemberRegisterParam data) {
         //檢核會員帳號是否存在
         if((MemberRepo.FindByAccount(data.getAccount())) != null) {
-            return responseCreateMemberSuccess("error","會員帳號已創建");
+            return responseError("會員帳號已創建");
         }
 
         //add member data
@@ -33,16 +33,13 @@ public class MemberService {
         memberModel.setUpdate_user("system");
         MemberRepo.save(memberModel);
 
-        return responseCreateMemberSuccess("OK","");
+        return responseCreateMemberSuccess();
     }
 
-    private JSONObject responseCreateMemberSuccess(String create_status, String create_message){
+    private JSONObject responseCreateMemberSuccess(){
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();
-
-        data.put("create_member_status",create_status);
-        data.put("message",create_message);
 
         status_code.put("status", "success");
         status_code.put("desc", "");

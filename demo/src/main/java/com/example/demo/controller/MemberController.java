@@ -20,9 +20,9 @@ public class MemberController {
     MemberService memberService;
 
     @PostMapping("/member/UpdateMember")
-    public JSONObject CheckAndUpdateMember(@Valid @RequestBody MemberUpdateParam input) {
+    public JSONObject updateMember(@Valid @RequestBody MemberUpdateParam input) {
         try{
-            return memberService.CheckAndUpdateMember(input);
+            return memberService.updateMember(input);
         }catch(Exception io){
             return memberService.responseError(io.toString());
         }

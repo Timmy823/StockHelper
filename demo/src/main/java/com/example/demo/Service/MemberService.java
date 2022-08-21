@@ -17,7 +17,7 @@ public class MemberService {
     public MemberService() {
     }
     
-    public JSONObject CheckAndUpdateMember(MemberUpdateParam data) {
+    public JSONObject updateMember(MemberUpdateParam data) {
          //檢核會員帳號是否存在
         MemberModel member = MemberRepo.FindByAccount(data.getAccount());
         if(member == null) {
@@ -36,10 +36,10 @@ public class MemberService {
         member.setUpdate_user("system");
         MemberRepo.save(member);
 
-        return responseCheckMemberSuccess("OK", "");
+        return responseUpdateMemberSuccess("OK", "");
     }
 
-    private JSONObject responseCheckMemberSuccess(String update_status, String data_message){
+    private JSONObject responseUpdateMemberSuccess(String update_status, String data_message){
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();

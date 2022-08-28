@@ -1,9 +1,9 @@
 package com.example.demo.Entity;
 
-import lombok.*;
+import lombok.Data;
 import java.util.Date;
 import javax.persistence.*;
-import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotEmpty;
 
 import org.hibernate.annotations.GenericGenerator;
 import org.springframework.data.annotation.CreatedDate;
@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 @Component
 @Entity
 @Data
-@RequiredArgsConstructor //final 修飾變量為特定參數
 @Table(name="member")
 @EntityListeners(AuditingEntityListener.class)
 public class MemberModel {
@@ -24,43 +23,41 @@ public class MemberModel {
     @Column(name="mid", unique = true, columnDefinition = "BINARY(36)")
     private String mid;
 
-    @NonNull
-    @NotBlank
+    @NotEmpty
     @Column(name="member_account", nullable = false, length = 350)
     private String member_account;
     
-    @NonNull
-    @NotBlank
+    @NotEmpty
     @Column(name="member_passwd", nullable = false, length = 16)
     private String member_passwd;
 
-    @NonNull
-    @NotBlank
+    @NotEmpty
     @Column(name="name", nullable = false, length = 50)
     private String name;
 
-    @Column(name="telephone", nullable = true, length = 11)
+    @Column(name="telephone", length = 11)
     private String telephone;
 
-    @NonNull
-    @NotBlank
+    @NotEmpty
     @Column(name="is_valid", nullable = false, length = 2)
     private String IsValid;
 
     @CreatedDate
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="create_time", updatable = false)
+    @Column(name="create_time", nullable = false, updatable = false)
     private Date create_time;
     
-    @Column(name="create_user", updatable = false, nullable = true, length = 10)
+    @NotEmpty
+    @Column(name="create_user", nullable = false, updatable = false, length = 10)
     private String create_user;
 
     @LastModifiedDate
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name="update_time")
+    @Column(name="update_time", nullable = false, updatable = true)
     private Date update_time;
 
-    @Column(name="update_user", updatable = true, nullable = true, length = 10)
+    @NotEmpty
+    @Column(name="update_user", nullable = false, updatable = true, length = 10)
     private String update_user;
 
     public MemberModel() {

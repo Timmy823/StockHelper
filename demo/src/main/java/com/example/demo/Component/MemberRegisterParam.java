@@ -26,7 +26,7 @@ public class MemberRegisterParam {
     @Pattern(regexp = "(09)+[\\d]{8}", message = "telephone為09開頭+8長數字")
     private String telephone;
 
-    public MemberRegisterParam(String member_account,String login_type, String password, String member_name, String telephone){
+    public MemberRegisterParam(String member_account, String login_type, String password, String member_name, String telephone) {
         super();
         this.account = member_account;
         this.login_type = login_type;

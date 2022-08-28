@@ -7,8 +7,10 @@ import com.example.demo.Repository.MemberRespository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import lombok.Data;
 import net.sf.json.JSONObject;
 
+@Data
 @Service
 public class MemberService {
     @Autowired
@@ -36,7 +38,7 @@ public class MemberService {
         return responseCreateMemberSuccess();
     }
 
-    private JSONObject responseCreateMemberSuccess(){
+    private JSONObject responseCreateMemberSuccess() {
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();

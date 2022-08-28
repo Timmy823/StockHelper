@@ -4,7 +4,6 @@ import lombok.*;
 
 import java.util.Date;
 import javax.persistence.*;
-import javax.validation.constraints.NotBlank;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -12,19 +11,14 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Data
-@Table(name="stock_favorite")
+@Table(name="stock_favorite_list")
 @EntityListeners(AuditingEntityListener.class)
-public class FavoriteListsModel {
+public class StockFavoriteListsModel {
 
     @EmbeddedId
-    private FavoriteListsId favoriteListsId;
+    private StockFavoriteListsId favoriteListsId;
 
-    @NonNull
-    @NotBlank
-    @Column(name="favorite_lists_name", nullable = false, length = 30)
-    private String favorite_lists_name;
-
-    @Column(name="stock_id", nullable = false, length = 4)
+    @Column(name="stock_id", nullable = false, length = 15)
     private String stock_id;
 
     @Column(name="stock_name", nullable = false, length = 50)

@@ -8,23 +8,25 @@ import javax.persistence.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.stereotype.Component;
 
+@Component
 @Entity
 @Data
-@Table(name="stock_favorite_list")
+@Table(name="favorite_list")
 @EntityListeners(AuditingEntityListener.class)
-public class StockFavoriteListsModel {
+public class FavoriteListModel {
 
     @EmbeddedId
-    private StockFavoriteListsId favoriteListsId;
+    private FavoriteListId favoriteListsId;
 
-    @Column(name="stock_id", nullable = false, length = 15)
-    private String stock_id;
-
-    @Column(name="stock_name", nullable = false, length = 50)
+    @Column(name="stock_name", length = 50)
     private String stock_name;
 
-    @Column(name="comments", nullable = true, length = 200)
+    @Column(name="list_status", length = 2)
+    private String list_status;
+
+    @Column(name="comments", length = 200)
     private String comments_string;
 
     @CreatedDate

@@ -6,11 +6,12 @@ import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.demo.Component.StockFavoriteListParam;
+import com.example.demo.Component.FavoriteListParam;
 import com.example.demo.Component.MemberRegisterParam;
 import com.example.demo.Service.MemberService;
 
@@ -19,15 +20,17 @@ import com.example.demo.Service.MemberService;
 public class MemberController {
     @Autowired
     MemberService memberService;
-    @PostMapping("/member/updateStockFavoriteList")
-    public JSONObject updateStockFavoriteList(@Valid @RequestBody StockFavoriteListParam input) {
+    
+    @PostMapping("/member/updateFavoriteList")
+    @CrossOrigin(origins = "http://localhost:5277", allowedHeaders = "")
+    public JSONObject updateFavoriteList(@Valid @RequestBody FavoriteListParam input) {
         try{
-            return memberService.updateStockFavoriteList(input);
+            return memberService.updateFavoriteList(input);
         }catch(Exception io){
             return memberService.responseError(io.toString());
         }
     }
-    
+
     @PostMapping("/member/createMember")
     public JSONObject createMember(@Valid @RequestBody MemberRegisterParam input) {
         try{

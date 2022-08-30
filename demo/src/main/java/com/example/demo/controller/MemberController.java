@@ -6,9 +6,7 @@ import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.example.demo.Component.CreateLoginParam;
 import com.example.demo.Service.MemberService;
@@ -19,6 +17,7 @@ public class MemberController {
     @Autowired
     MemberService memberService;
 
+    @CrossOrigin(origins = "http://localhost:5277", allowedHeaders = "")
     @PostMapping("/member/searchMember")
     public JSONObject CheckMemberAndCreateLogin(@Valid @RequestBody CreateLoginParam input) {
         try{

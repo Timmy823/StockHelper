@@ -31,7 +31,7 @@ public class MemberService {
             member_map.put(member_valuesStrings[i], new String());
         }
         //檢核會員帳號是否存在
-        MemberModel member = MemberRepo.FindByAccountAndPassword(data.getAccount(), data.getPassword());
+        MemberModel member = MemberRepo.FindByAccountAndPassword(data.getAccount(),data.getPassword());
         if(member == null) {
             return responseError("會員帳號或密碼錯誤");
         }

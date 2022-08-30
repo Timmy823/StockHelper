@@ -2,10 +2,9 @@ package com.example.demo.Controller;
 
  import net.sf.json.JSONObject;
 
- import javax.validation.Valid;
-
  import org.springframework.beans.factory.annotation.Autowired;
  import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
  import org.springframework.web.bind.annotation.RestController;
@@ -18,10 +17,11 @@ import org.springframework.web.bind.annotation.RequestBody;
     @Autowired
     MemberService memberService;
 
+    @CrossOrigin(origins = "http://localhost:5277", allowedHeaders = "")
     @PostMapping("/member/sendEmailCertification")
-    public JSONObject SendEmailCertification(@Valid @RequestBody JSONObject input) {
+    public JSONObject SendEmailCertification(@RequestBody JSONObject input) {
         try{
-        return memberService.SendEmailCertification(input.getString("member_account"));
+            return memberService.SendEmailCertification(input.getString("member_account"));
         }catch(Exception io){
             return memberService.responseError(io.toString());
         }

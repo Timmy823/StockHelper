@@ -33,7 +33,7 @@ public class MemberService {
         //檢核會員帳號是否存在
         MemberModel member = MemberRepo.FindByAccountAndPassword(data.getAccount(),data.getPassword());
         if(member == null) {
-            return responseGetMemberInfoSuccess("error", member_map, "會員帳號或密碼錯誤");
+            return responseError("會員帳號或密碼錯誤");
         }
 
         //add member login log data
@@ -51,24 +51,19 @@ public class MemberService {
         member_map.put("verification", member.getIsValid().equals("99") ? "N" : "Y");
         member_map.put("timestamp", member.getCreate_time().toString());
 
-        return responseGetMemberInfoSuccess("OK", member_map,"");
+        return responseGetMemberInfoSuccess(member_map);
     }
 
-    public JSONObject responseGetMemberInfoSuccess(String create_status, HashMap<String, String> member_map, String create_message){
+    private JSONObject responseGetMemberInfoSuccess(HashMap<String, String> member_map){
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();
-        JSONObject member_object = new JSONObject();
         String [] object_keyString = {"member_UUID", "member_account", "name", "telephone"
         , "member_account_verification(Y/N)", "member_account_create_timestamp"};
         
         for(int i=0; i<object_keyString.length; i++) {
-            member_object.put(object_keyString[i], member_map.get(member_valuesStrings[i]));
+            data.put(object_keyString[i], member_map.get(member_valuesStrings[i]));
         }
-        data.put("search_member_status",create_status);
-        data.put("message",create_message);
-        data.put("member_data",member_object);
-
         status_code.put("status", "success");
         status_code.put("desc", "");
 

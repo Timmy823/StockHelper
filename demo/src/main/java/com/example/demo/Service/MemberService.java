@@ -15,7 +15,7 @@ import net.sf.json.JSONObject;
 
 @Service
 public class MemberService {
-    String [] member_valuesStrings = {"UUID", "account", "name", "telephone", "verification", "timestamp"};
+    String [] member_valuesStrings = {"account", "name", "telephone", "verification", "timestamp"};
     
     @Autowired
     private MemberRespository MemberRepo;
@@ -27,9 +27,7 @@ public class MemberService {
     
     public JSONObject getMemberInfo(GetMemberInfoParam data) {
         HashMap<String, String> member_map = new HashMap<String, String>();
-        for(int i=0; i<member_valuesStrings.length; i++){
-            member_map.put(member_valuesStrings[i], new String());
-        }
+
         //檢核會員帳號是否存在
         MemberModel member = MemberRepo.FindByAccountAndPassword(data.getAccount(),data.getPassword());
         if(member == null) {
@@ -44,7 +42,6 @@ public class MemberService {
         LoginRepo.save(loginModel);
 
         //add response values to map
-        member_map.put("UUID", member.getMid().toString());
         member_map.put("account", member.getMember_account());
         member_map.put("name", member.getName());
         member_map.put("telephone", member.getTelephone());
@@ -58,7 +55,7 @@ public class MemberService {
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();
-        String [] object_keyString = {"member_UUID", "member_account", "name", "telephone"
+        String [] object_keyString = {"member_account", "name", "telephone"
         , "member_account_verification(Y/N)", "member_account_create_timestamp"};
         
         for(int i=0; i<object_keyString.length; i++) {

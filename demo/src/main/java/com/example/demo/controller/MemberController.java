@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestBody;
     @Autowired
     MemberService memberService;
 
-    @CrossOrigin(origins = "http://localhost:5277", allowedHeaders = "")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
     @PostMapping("/member/sendEmailCertification")
     public JSONObject SendEmailCertification(@RequestBody JSONObject input) {
         try{

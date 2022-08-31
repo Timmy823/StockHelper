@@ -20,8 +20,9 @@ public class MemberService {
     @Autowired
     private MemberRespository MemberRepo;
 
-    public JSONObject SendEmailCertification(String customer_email) {
+    public JSONObject SendEmailCertification(JSONObject data) {
         try {    
+            String customer_email = data.getString("member_account");
             //檢核會員帳號是否存在
             if(MemberRepo.existByAccount(customer_email) == 0) 
                 return responseError("查無此會員帳號");

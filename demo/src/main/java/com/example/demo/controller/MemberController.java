@@ -21,7 +21,7 @@ public class MemberController {
     @PostMapping("/member/sendEmailCertification")
     public JSONObject SendEmailCertification(@RequestBody JSONObject input) {
         try{
-            return memberService.SendEmailCertification(input.getString("member_account"));
+            return memberService.SendEmailCertification(input);
         }catch(Exception io){
             return memberService.responseError(io.toString());
         }

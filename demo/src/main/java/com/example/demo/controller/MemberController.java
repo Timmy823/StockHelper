@@ -8,7 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.demo.Component.MemberRegisterParam;
 import com.example.demo.Component.GetMemberInfoParam;
+
 import com.example.demo.Service.MemberService;
 
 @RestController
@@ -17,12 +19,22 @@ public class MemberController {
     @Autowired
     MemberService memberService;
 
+    @PostMapping("/member/createMember")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject createMember(@Valid @RequestBody MemberRegisterParam input) {
+        try {
+            return memberService.createMember(input);
+        } catch (Exception io) {
+            return memberService.responseError(io.toString());
+        }
+    }
+
     @PostMapping("/member/getMemberInfo")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
     public JSONObject getMemberInfo(@Valid @RequestBody GetMemberInfoParam input) {
-        try{
+        try {
             return memberService.getMemberInfo(input);
-        }catch(Exception io){
+        } catch(Exception io){
             return memberService.responseError(io.toString());
         }
     }

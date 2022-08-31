@@ -2,12 +2,15 @@ package com.example.demo.Service;
 
 
 import com.example.demo.Component.MemberRegisterParam;
+import com.example.demo.Component.MemberComponent.FavoriteListNameParam;
 import com.example.demo.Component.GetMemberInfoParam;
 
 import com.example.demo.Entity.MemberModel;
+import com.example.demo.Entity.FavoriteListNameModel;
 import com.example.demo.Entity.LoginLogModel;
 
 import com.example.demo.Repository.MemberRespository;
+import com.example.demo.Repository.FavoriteListNameRespository;
 import com.example.demo.Repository.LoginLogRespository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,8 +26,38 @@ public class MemberService {
     private MemberRespository MemberRepo;
     @Autowired
     private LoginLogRespository LoginLogRepo;
+    @Autowired
+    private FavoriteListNameRespository ListNameRepo;
     
     public MemberService() {
+    }
+
+    public JSONObject addFavoriteListName(FavoriteListNameParam data) {
+        MemberModel member = new MemberModel();
+        FavoriteListNameModel exist_list= new FavoriteListNameModel();
+        FavoriteListNameModel result_list = new FavoriteListNameModel();
+        //檢核會員帳號是否存在
+        if((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
+            return responseError("查無會員帳號");
+        }
+        
+        if((exist_list = ListNameRepo.FindByListName(member.getMid(), data.getList_name())) != null) {
+            if(exist_list.getStatus().equals("0")) {
+                return responseError("list_name: \"" + data.getList_name() + "\" 重複");
+            }
+            //list is exist and status invalid, update list status to valid.
+            exist_list.setStatus("0");
+            ListNameRepo.save(exist_list);
+            return responseSuccess();
+        }
+        //insert a new list.
+        result_list.setMember_id(member.getMid());
+        result_list.setFavorite_list_name(data.getList_name());
+        result_list.setStatus("0");
+        result_list.setCreate_user("system");
+        result_list.setUpdate_user("system");
+        ListNameRepo.save(result_list);
+        return responseSuccess();
     }
 
     public JSONObject createMember(MemberRegisterParam data) {
@@ -44,7 +77,7 @@ public class MemberService {
         memberModel.setUpdate_user("system");
         MemberRepo.save(memberModel);
 
-        return responseCreateMemberSuccess();
+        return responseSuccess();
     }
     
     public JSONObject getMemberInfo(GetMemberInfoParam data) {
@@ -72,7 +105,7 @@ public class MemberService {
         return responseGetMemberInfoSuccess(response_data);
     }
 
-    private JSONObject responseCreateMemberSuccess() {
+    private JSONObject responseSuccess() {
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();

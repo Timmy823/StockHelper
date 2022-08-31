@@ -6,8 +6,6 @@ import com.example.demo.Entity.MemberModel;
 import com.example.demo.Repository.LoginRespository;
 import com.example.demo.Repository.MemberRespository;
 
-import java.util.HashMap;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,8 +13,6 @@ import net.sf.json.JSONObject;
 
 @Service
 public class MemberService {
-    String [] member_valuesStrings = {"account", "name", "telephone", "verification", "timestamp"};
-    
     @Autowired
     private MemberRespository MemberRepo;
     @Autowired
@@ -26,8 +22,8 @@ public class MemberService {
     }
     
     public JSONObject getMemberInfo(GetMemberInfoParam data) {
-        HashMap<String, String> member_map = new HashMap<String, String>();
-
+        JSONObject result = new JSONObject();
+        
         //檢核會員帳號是否存在
         MemberModel member = MemberRepo.FindByAccountAndPassword(data.getAccount(),data.getPassword());
         if(member == null) {
@@ -41,26 +37,19 @@ public class MemberService {
         loginModel.setUpdate_user("system");
         LoginRepo.save(loginModel);
 
-        //add response values to map
-        member_map.put("account", member.getMember_account());
-        member_map.put("name", member.getName());
-        member_map.put("telephone", member.getTelephone());
-        member_map.put("verification", member.getIsValid().equals("99") ? "N" : "Y");
-        member_map.put("timestamp", member.getCreate_time().toString());
+        result.put("member_account", member.getMember_account());
+        result.put("name", member.getName());
+        result.put("telephone", member.getTelephone());
+        result.put("member_account_verification(Y/N)", member.getIsValid().equals("99") ? "N" : "Y");
+        result.put("member_account_create_timestamp", member.getCreate_time().toString());
 
-        return responseGetMemberInfoSuccess(member_map);
+        return responseGetMemberInfoSuccess(result);
     }
 
-    private JSONObject responseGetMemberInfoSuccess(HashMap<String, String> member_map){
-        JSONObject data = new JSONObject();
+    private JSONObject responseGetMemberInfoSuccess(JSONObject data){
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();
-        String [] object_keyString = {"member_account", "name", "telephone"
-        , "member_account_verification(Y/N)", "member_account_create_timestamp"};
         
-        for(int i=0; i<object_keyString.length; i++) {
-            data.put(object_keyString[i], member_map.get(member_valuesStrings[i]));
-        }
         status_code.put("status", "success");
         status_code.put("desc", "");
 

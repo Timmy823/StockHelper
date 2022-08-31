@@ -34,7 +34,17 @@ public class MemberController {
     public JSONObject getMemberInfo(@Valid @RequestBody GetMemberInfoParam input) {
         try {
             return memberService.getMemberInfo(input);
-        } catch(Exception io){
+        } catch (Exception io) {
+            return memberService.responseError(io.toString());
+        }
+    }
+
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    @PostMapping("/member/sendEmailCertification")
+    public JSONObject SendEmailCertification(@RequestBody JSONObject input) {
+        try {
+            return memberService.SendEmailCertification(input);
+        } catch (Exception io) {
             return memberService.responseError(io.toString());
         }
     }

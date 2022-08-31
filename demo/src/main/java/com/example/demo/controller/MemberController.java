@@ -1,19 +1,19 @@
 package com.example.demo.Controller;
 
- import net.sf.json.JSONObject;
+import net.sf.json.JSONObject;
 
- import org.springframework.beans.factory.annotation.Autowired;
- import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
- import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RestController;
 
- import com.example.demo.Service.MemberService;
+import com.example.demo.Service.MemberService;
 
- @RestController
- @EnableJpaAuditing
- public class MemberController {
+@RestController
+@EnableJpaAuditing
+public class MemberController {
     @Autowired
     MemberService memberService;
 
@@ -26,4 +26,4 @@ import org.springframework.web.bind.annotation.RequestBody;
             return memberService.responseError(io.toString());
         }
     }
- }
+}

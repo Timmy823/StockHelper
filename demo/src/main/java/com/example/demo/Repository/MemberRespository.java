@@ -11,4 +11,10 @@ import com.example.demo.Entity.MemberModel;
 public interface MemberRespository extends JpaRepository<MemberModel, String> {
     @Query(nativeQuery = true, value = "select count(*) from stock_members where BINARY member_account = ?1")
     public long existByAccount(String account);
+
+    @Query(nativeQuery = true, value = "select * from member where BINARY member_account = ?1")
+    public MemberModel FindByAccount(String account);
+
+    @Query(nativeQuery = true, value = "select * from member where BINARY member_account = ?1 and BINARY member_passwd = ?2")
+    public MemberModel FindByAccountAndPassword(String account, String password);
 }

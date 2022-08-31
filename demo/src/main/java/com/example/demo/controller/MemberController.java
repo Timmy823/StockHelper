@@ -17,7 +17,7 @@ public class MemberController {
     @Autowired
     MemberService memberService;
 
-    @CrossOrigin(origins = "http://localhost:5277", allowedHeaders = "")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
     @PostMapping("/member/getMemberInfo")
     public JSONObject getMemberInfo(@Valid @RequestBody GetMemberInfoParam input) {
         try{

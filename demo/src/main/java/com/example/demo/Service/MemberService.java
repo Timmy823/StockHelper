@@ -24,7 +24,7 @@ public class MemberService {
         try {    
             //檢核會員帳號是否存在
             if(MemberRepo.existByAccount(customer_email) == 0) 
-                return responseEmailCertification("error", "查無此會員帳號", "");
+                return responseError("查無此會員帳號");
             
             //create random 6 numbers and letters
             String salt_number = getSaltString(6);
@@ -37,7 +37,7 @@ public class MemberService {
             mail_message.setText("您好，\n\n您使用的stockhelper驗證碼為 "+ salt_number+ " 。");
 
             mailSender().send(mail_message);
-            return responseEmailCertification("OK", "", salt_number);
+            return responseEmailCertification(salt_number);
         } catch (MailException e) {
             return responseError(e.getMessage());
         }
@@ -71,12 +71,10 @@ public class MemberService {
         return salt.toString();
     }
 
-    private JSONObject responseEmailCertification(String statusString,String data_message, String saltString) {
+    private JSONObject responseEmailCertification(String saltString) {
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();
-        data.put("send_mail_status:", statusString);
-        data.put("message", data_message);
         data.put("certification_code", saltString);
 
         status_code.put("status", "success");

@@ -18,6 +18,16 @@ import com.example.demo.Service.MemberService;
 public class MemberController {
     @Autowired
     MemberService memberService;
+    
+    @PostMapping("/member/getFavoriteList")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject getFavoriteList(@Valid @RequestBody JSONObject input) {
+        try{
+            return memberService.getFavoriteList(input);
+        }catch(Exception io){
+            return memberService.responseError(io.toString());
+        }
+    }
 
     @PostMapping("/member/createMember")
     @CrossOrigin(origins = "*", allowedHeaders = "*")

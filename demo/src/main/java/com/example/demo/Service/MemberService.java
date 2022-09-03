@@ -1,17 +1,24 @@
 package com.example.demo.Service;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 
+import net.minidev.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import com.example.demo.Component.MemberRegisterParam;
 import com.example.demo.Component.GetMemberInfoParam;
 
 import com.example.demo.Entity.MemberModel;
+import com.example.demo.Entity.FavoriteListDetailModel;
+import com.example.demo.Entity.FavoriteListNameModel;
 import com.example.demo.Entity.LoginLogModel;
 
 import com.example.demo.Repository.MemberRespository;
+import com.example.demo.Repository.FavoriteListDetailRespository;
+import com.example.demo.Repository.FavoriteListNameRespository;
 import com.example.demo.Repository.LoginLogRespository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,8 +38,56 @@ public class MemberService {
     private MemberRespository MemberRepo;
     @Autowired
     private LoginLogRespository LoginLogRepo;
-
+    @Autowired
+    private FavoriteListNameRespository ListNameRepo;
+    @Autowired
+    private FavoriteListDetailRespository ListDetailRepo;
+    
     public MemberService() {
+    }
+
+    public JSONObject getFavoriteList(JSONObject data) {
+        String member_account = data.getString("member_account");
+        MemberModel member = new MemberModel();
+        List<FavoriteListNameModel> list_names = new ArrayList<FavoriteListNameModel>();
+        List<FavoriteListDetailModel> list_details = new ArrayList<FavoriteListDetailModel>();
+        JSONArray response_data= new JSONArray();
+
+        //Check member exists, and get mid.
+        if((member = MemberRepo.FindByAccount(member_account)) == null) {
+            return responseError("會員帳號尚未建立");
+        }
+        
+        list_names = ListNameRepo.FindListByMember(member.getMid());
+        if(list_names.size() == 0) {
+            return responseError("會員帳號名下查無清單");
+        }
+
+        for(FavoriteListNameModel sub_list : list_names) {
+            //list 無效跳過不回傳
+            if(!sub_list.getStatus().equals("0")) 
+                continue;
+
+            JSONObject response_item = new JSONObject();
+            JSONArray item_array = new JSONArray();
+            response_item.put("list_name", sub_list.getFavorite_list_name());
+            list_details = ListDetailRepo.FindDetailByListNameId(sub_list.getList_name_id());    
+            
+            for(FavoriteListDetailModel detail : list_details) {
+                //stock id 無效跳過不回傳
+                if(!detail.getStatus().equals("0"))
+                    continue;
+
+                JSONObject item_detail= new JSONObject();
+                item_detail.put("stock_id", detail.getStock_id());
+                item_detail.put("stock_name", detail.getStock_name());
+                item_detail.put("comment", detail.getComment());
+                item_array.add(item_detail);
+            }
+            response_item.put("stock_list", item_array);
+            response_data.add(response_item);
+        }
+        return responseJSONArraySuccess(response_data);
     }
 
     public JSONObject createMember(MemberRegisterParam data) {
@@ -119,7 +174,6 @@ public class MemberService {
         properties.put("mail.smtp.starttls.enable", "true");
         properties.put("mail.smtp.starttls.required", "true");
         javaMailSender.setJavaMailProperties(properties);
-        ;
         return javaMailSender;
     }
 
@@ -147,6 +201,18 @@ public class MemberService {
     }
 
     private JSONObject responseGetMemberInfoSuccess(JSONObject data) {
+        JSONObject status_code = new JSONObject();
+        JSONObject result = new JSONObject();
+
+        status_code.put("status", "success");
+        status_code.put("desc", "");
+
+        result.put("metadata", status_code);
+        result.put("data", data);
+        return result;
+    }
+
+    private JSONObject responseJSONArraySuccess(JSONArray data) {
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();
 

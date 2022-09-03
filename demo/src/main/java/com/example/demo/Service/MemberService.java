@@ -13,6 +13,9 @@ import com.example.demo.Repository.MemberRespository;
 import com.example.demo.Repository.FavoriteListNameRespository;
 import com.example.demo.Repository.LoginLogRespository;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,22 +37,27 @@ public class MemberService {
 
     public JSONObject addFavoriteListName(FavoriteListNameParam data) {
         MemberModel member = new MemberModel();
-        FavoriteListNameModel exist_list= new FavoriteListNameModel();
+        List<FavoriteListNameModel> exist_list= new ArrayList<FavoriteListNameModel>();
         FavoriteListNameModel result_list = new FavoriteListNameModel();
         //檢核會員帳號是否存在
         if((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
             return responseError("查無會員帳號");
         }
-        
-        if((exist_list = ListNameRepo.FindByListName(member.getMid(), data.getList_name())) != null) {
-            if(exist_list.getStatus().equals("0")) {
-                return responseError("list_name: \"" + data.getList_name() + "\" 重複");
+
+        exist_list = ListNameRepo.FindMemberByListName(member.getMid(), data.getList_name());
+        if(exist_list.size() > 1) {
+            return responseError("list_name: \"" + data.getList_name() + "\" 重複" + exist_list.size() + "筆");
+        }
+        if(exist_list.size() == 1) {
+            if(exist_list.get(0).getStatus().equals("0")) {
+                return responseError("list_name: \"" + data.getList_name() + "\" 已重複");
             }
             //list is exist and status invalid, update list status to valid.
-            exist_list.setStatus("0");
-            ListNameRepo.save(exist_list);
+            exist_list.get(0).setStatus("0");
+            ListNameRepo.save(exist_list.get(0));
             return responseSuccess();
         }
+
         //insert a new list.
         result_list.setMember_id(member.getMid());
         result_list.setFavorite_list_name(data.getList_name());

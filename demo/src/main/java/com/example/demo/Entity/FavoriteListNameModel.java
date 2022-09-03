@@ -6,6 +6,7 @@ import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 
+import org.hibernate.annotations.Comment;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -28,6 +29,7 @@ public class FavoriteListNameModel {
     @Column(name = "list_name",nullable = false, length = 30)
     private String favorite_list_name;
 
+    @Comment("0為有效，1為無效")
     @Column(name = "status",nullable = false, length = 1)
     private String status;
     

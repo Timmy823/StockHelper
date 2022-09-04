@@ -1,6 +1,6 @@
 package com.example.demo.Repository;
 
-import java.util.List;
+import java.util.ArrayList;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -9,5 +9,5 @@ import com.example.demo.Entity.FavoriteListNameModel;
 
 public interface FavoriteListNameRespository extends JpaRepository<FavoriteListNameModel, Long> {
     @Query(nativeQuery = true, value = "select * from favorite_list_name where BINARY member_id = ?1 and BINARY list_name = ?2")
-    public List<FavoriteListNameModel> FindMemberByListName(String member_id, String list_name);  
+    public ArrayList<FavoriteListNameModel> FindMemberByListName(String member_id, String list_name);
 }

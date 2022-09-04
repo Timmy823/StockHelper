@@ -23,9 +23,9 @@ public class MemberController {
     @PostMapping("/member/addFavoriteListName")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
     public JSONObject addFavoriteListName(@Valid @RequestBody FavoriteListNameParam input) {
-        try{
+        try {
             return memberService.addFavoriteListName(input);
-        }catch(Exception io){
+        } catch (Exception io) {
             return memberService.responseError(io.toString());
         }
     }
@@ -45,7 +45,17 @@ public class MemberController {
     public JSONObject getMemberInfo(@Valid @RequestBody GetMemberInfoParam input) {
         try {
             return memberService.getMemberInfo(input);
-        } catch(Exception io){
+        } catch (Exception io) {
+            return memberService.responseError(io.toString());
+        }
+    }
+
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    @PostMapping("/member/sendEmailCertification")
+    public JSONObject SendEmailCertification(@RequestBody JSONObject input) {
+        try {
+            return memberService.SendEmailCertification(input);
+        } catch (Exception io) {
             return memberService.responseError(io.toString());
         }
     }

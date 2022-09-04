@@ -87,18 +87,15 @@ public class CompanyInfoProfileService {
             }
             allstockArray.add(tempstock);
 
-            return responseCompanyProfileSuccessObject(allstockArray);
+            return responseSuccess(allstockArray);
         }catch (IOException io){
             return responseError(io.toString());
         }
     }
 
-    public JSONObject responseCompanyProfileSuccessObject(JSONArray allstockArray){
-        JSONObject data = new JSONObject();
+    public JSONObject responseSuccess(JSONArray data){
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();
-
-        data.put("stockdata",allstockArray);
         
         status_code.put("status", "success");
         status_code.put("desc", "");

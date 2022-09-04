@@ -61,13 +61,15 @@ public class MemberService {
         if (exist_list.size() == 0) {
             return responseError("list_name: \"" + data.getList_name() + "\" 尚未創建");
         }
+        if (exist_list.size() > 1) {
+            return responseError("list_name資料異常，重複共" + exist_list.size());
+        }
             
         //get stock_list info
         stock_list = ListDetailRepo.FindStockByListNameId(exist_list.get(0).getList_name_id(), data.getStock_id());
         if (stock_list.size() > 1) {
-            return responseError("list存在重複stock_id，共" + stock_list.size() + "筆");            
+            return responseError("stock_id資料異常，重複共" + stock_list.size() + "筆");            
         }
-        
         if (stock_list.size() == 0 || !stock_list.get(0).getStatus().equals("0")) {
             return responseError("list中查無此stock_id");
         }

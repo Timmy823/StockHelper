@@ -25,7 +25,7 @@ public class FavoriteListDetailModel {
     private Long list_detail_id;
 
     @Column(name = "list_name_id", nullable = false, columnDefinition = "BINARY(36)")
-    private String list_name_id;
+    private Long list_name_id;
 
     @Column(name = "stock_id", nullable = false, length = 15)
     private String stock_id;

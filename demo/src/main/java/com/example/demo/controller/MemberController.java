@@ -20,6 +20,16 @@ public class MemberController {
     @Autowired
     MemberService memberService;
 
+    @PostMapping("/member/deleteFavoriteListName")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject deleteFavoriteListName(@Valid @RequestBody FavoriteListNameParam input) {
+        try {
+            return memberService.deleteFavoriteListName(input);
+        } catch (Exception io) {
+            return memberService.responseError(io.toString());
+        }
+    }
+
     @PostMapping("/member/addFavoriteListName")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
     public JSONObject addFavoriteListName(@Valid @RequestBody FavoriteListNameParam input) {

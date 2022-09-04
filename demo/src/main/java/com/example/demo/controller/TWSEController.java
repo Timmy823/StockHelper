@@ -14,8 +14,14 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
+
 @RestController
 public class TWSEController {
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
     @GetMapping("/twse/getAllCompanyList")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
     public JSONObject getCompanyList(@RequestBody JSONObject input, TWSEService twse) {
@@ -23,12 +29,12 @@ public class TWSEController {
         String twseUrl = "https://isin.twse.com.tw/isin/C_public.jsp?strMode=" + String.valueOf(list_level * 2);
 
         try {
-            twse = new TWSEService(twseUrl);
+            twse = new TWSEService(twseUrl, stringRedisTemplate);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        return twse.getCompanyList();
+        return twse.getCompanyList(list_level);
     }
 
     @GetMapping("/twse/getCompanyDividendPolicy")
@@ -38,7 +44,7 @@ public class TWSEController {
         String stockUrl = "https://tw.stock.yahoo.com/quote/" + id + "/dividend";
 
         try {
-            twse = new TWSEService(stockUrl);
+            twse = new TWSEService(stockUrl, stringRedisTemplate);
             return twse.getCompanyDividendPolicy();
         } catch (IOException io) {
             io.printStackTrace();
@@ -66,7 +72,7 @@ public class TWSEController {
             stockUrl = "https://www.twse.com.tw/exchangeReport/FMNPTK?response=html&stockNo=" + input_id;
 
         try {
-            twse = new TWSEService(stockUrl);
+            twse = new TWSEService(stockUrl, stringRedisTemplate);
             return twse.getStockTradeInfo(input_type, specific_date);
         } catch (IOException io) {
             io.printStackTrace();

@@ -9,5 +9,5 @@ import com.example.demo.Entity.FavoriteListNameModel;
 
 public interface FavoriteListNameRespository extends JpaRepository<FavoriteListNameModel, Long> {
     @Query(nativeQuery = true, value = "select * from favorite_list_name where BINARY member_id = ?1")
-    public List<FavoriteListNameModel> FindListByMember(String member_id);  
+    public List<FavoriteListNameModel> FindAllListByMember(String member_id);  
 }

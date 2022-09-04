@@ -58,7 +58,7 @@ public class MemberService {
             return responseError("會員帳號尚未建立");
         }
         
-        list_names = ListNameRepo.FindListByMember(member.getMid());
+        list_names = ListNameRepo.FindAllListByMember(member.getMid());
         if(list_names.size() == 0) {
             return responseError("會員帳號名下查無清單");
         }

@@ -1,7 +1,6 @@
 package com.example.demo.Service;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 
@@ -49,8 +48,8 @@ public class MemberService {
     public JSONObject getFavoriteList(JSONObject data) {
         String member_account = data.getString("member_account");
         MemberModel member = new MemberModel();
-        List<FavoriteListNameModel> list_names = new ArrayList<FavoriteListNameModel>();
-        List<FavoriteListDetailModel> list_details = new ArrayList<FavoriteListDetailModel>();
+        ArrayList<FavoriteListNameModel> list_names = new ArrayList<FavoriteListNameModel>();
+        ArrayList<FavoriteListDetailModel> list_details = new ArrayList<FavoriteListDetailModel>();
         JSONArray response_data= new JSONArray();
 
         //Check member exists, and get mid.

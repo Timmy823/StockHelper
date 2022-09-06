@@ -4,7 +4,6 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import com.example.demo.Component.MemberRegisterParam;

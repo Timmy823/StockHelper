@@ -123,8 +123,17 @@ public class TWSEService {
         }
     }
 
-    public JSONObject getCompanyDividendPolicy() {
+    public JSONObject getCompanyDividendPolicy(String stock_id) {
         try {
+            String get_company_dividend_redis_key = stock_id + "_company_history_dividend_policy";
+            int redis_ttl = 86400 * 7; // redis存活7天
+
+            String company_dividend_string = this.stringRedisTemplate.opsForValue().get(get_company_dividend_redis_key);
+            if (company_dividend_string != null) {
+                System.out.println(company_dividend_string);
+                return responseSuccess(JSONArray.fromObject(company_dividend_string));
+            }
+
             // make up dividend days 指的是填息天數。
             String[] stock_dividend_items = { "dividend_period", "cash_dividend(dollors)", "stock_dividend(shares)",
             "EX-dividend_date", "EX-right_date", "dividend_payment_date", "right_payment_date",
@@ -158,6 +167,9 @@ public class TWSEService {
                 }
                 dividend_info_array.add(stock_ifo);
             }
+
+            this.stringRedisTemplate.opsForValue().setIfAbsent(get_company_dividend_redis_key,
+            dividend_info_array.toString(), redis_ttl, TimeUnit.SECONDS);
 
             return responseSuccess(dividend_info_array);
         } catch (IOException io) {

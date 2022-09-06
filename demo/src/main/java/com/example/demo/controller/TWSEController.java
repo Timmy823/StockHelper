@@ -73,7 +73,7 @@ public class TWSEController {
 
         try {
             twse = new TWSEService(stockUrl, stringRedisTemplate);
-            return twse.getStockTradeInfo(input_type, specific_date);
+            return twse.getStockTradeInfo(input);
         } catch (IOException io) {
             io.printStackTrace();
             return twse.responseError(io.toString());

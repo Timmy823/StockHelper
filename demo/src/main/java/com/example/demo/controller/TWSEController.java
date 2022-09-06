@@ -1,21 +1,20 @@
 package com.example.demo.Controller;
 
-import com.example.demo.Service.TWSEService;
-import com.example.demo.Component.StockTradeInfoParam;
-
-import net.sf.json.JSONObject;
-
 import java.io.IOException;
 
 import javax.validation.Valid;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import com.example.demo.Component.StockTradeInfoParam;
+import com.example.demo.Service.TWSEService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+import net.sf.json.JSONObject;
 
 @RestController
 public class TWSEController {
@@ -35,6 +34,19 @@ public class TWSEController {
         }
 
         return twse.getCompanyList(list_level);
+    }
+
+    @GetMapping("/twse/getCompanyProfile")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject getCompanyInfoProfile(@RequestBody JSONObject input, TWSEService stock) {
+        Integer stockid = input.getInt("id");
+        String stockUrl = "https://tw.stock.yahoo.com/quote/" + stockid + "/profile";
+        try {
+            stock = new TWSEService(stockUrl, stringRedisTemplate);
+            return stock.getCompanyInfoProfile();
+        } catch (IOException e) {
+            return stock.responseError(e.toString());
+        }
     }
 
     @GetMapping("/twse/getCompanyDividendPolicy")

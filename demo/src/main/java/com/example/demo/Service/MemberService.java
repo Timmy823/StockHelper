@@ -112,11 +112,6 @@ public class MemberService {
 
         String get_member_info_redis_key = data.getAccount() + "_member_info";
         int redis_ttl = 3600; // redis存活 1 hour
-        String member_info_string = this.stringRedisTemplate.opsForValue().get(get_member_info_redis_key);
-        if (member_info_string != null) {
-            System.out.println(member_info_string);
-            return responseGetMemberInfoSuccess(JSONObject.fromObject(member_info_string));
-        }
 
         // add member login log data
         LoginLogModel loginlogModel = new LoginLogModel();
@@ -124,6 +119,12 @@ public class MemberService {
         loginlogModel.setCreate_user("system");
         loginlogModel.setUpdate_user("system");
         LoginLogRepo.save(loginlogModel);
+
+        String member_info_string = this.stringRedisTemplate.opsForValue().get(get_member_info_redis_key);
+        if (member_info_string != null) {
+            System.out.println(member_info_string);
+            return responseGetMemberInfoSuccess(JSONObject.fromObject(member_info_string));
+        }
 
         response_data.put("member_account", member.getMember_account());
         response_data.put("name", member.getName());

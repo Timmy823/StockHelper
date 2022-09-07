@@ -149,13 +149,13 @@ public class TWSEService {
         try {
             String type = data.get_type();
             Integer specific_date = data.get_date();
-            String trade_info_redis_key = data.get_stockID() + "_stock_trade_info";
+            String trade_info_redis_key = " : " + data.get_stockID();
             if (type.equals("1")) {
-                trade_info_redis_key = trade_info_redis_key + "_daily_" + specific_date;
+                trade_info_redis_key = "stock_trade_info_daily_" + specific_date + trade_info_redis_key;
             } else if (type.equals("2")) {
-                trade_info_redis_key = trade_info_redis_key + "_monthly_" + specific_date.toString().substring(0, 6);
+                trade_info_redis_key = "stock_trade_info_monthly_" + specific_date.toString().substring(0, 6) + trade_info_redis_key;
             } else if (type.equals("3")) {
-                trade_info_redis_key = trade_info_redis_key + "_yearly_" + specific_date.toString().substring(0, 4);
+                trade_info_redis_key = "stock_trade_info_yearly_" + specific_date.toString().substring(0, 4) + trade_info_redis_key;
             }
 
             String stock_info_string = this.stringRedisTemplate.opsForValue().get(trade_info_redis_key);

@@ -1,25 +1,21 @@
 package com.example.demo.Service;
 
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Random;
 
-import net.sf.json.JSONObject;
-
-import com.example.demo.Component.MemberRegisterParam;
-import com.example.demo.Component.MemberComponent.FavoriteListNameParam;
 import com.example.demo.Component.GetMemberInfoParam;
-
-import com.example.demo.Entity.MemberModel;
+import com.example.demo.Component.MemberRegisterParam;
+import com.example.demo.Component.MemberUpdateParam;
+import com.example.demo.Component.MemberComponent.FavoriteListNameParam;
 import com.example.demo.Entity.FavoriteListDetailModel;
 import com.example.demo.Entity.FavoriteListNameModel;
 import com.example.demo.Entity.LoginLogModel;
-
-import com.example.demo.Repository.MemberRespository;
+import com.example.demo.Entity.MemberModel;
 import com.example.demo.Repository.FavoriteListDetailRespository;
 import com.example.demo.Repository.FavoriteListNameRespository;
 import com.example.demo.Repository.LoginLogRespository;
-
-import java.util.ArrayList;
+import com.example.demo.Repository.MemberRespository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -30,12 +26,14 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.stereotype.Service;
 
 import lombok.Data;
+import net.sf.json.JSONObject;
 
 @Data
 @Service
 public class MemberService {
     @Autowired
     private MemberRespository MemberRepo;
+
     @Autowired
     private LoginLogRespository LoginLogRepo;
     @Autowired
@@ -46,35 +44,26 @@ public class MemberService {
     public MemberService() {
     }
 
-    public JSONObject deleteFavoriteListName(FavoriteListNameParam data) {
-        MemberModel member = new MemberModel();
-        ArrayList<FavoriteListNameModel> exist_list = new ArrayList<FavoriteListNameModel>();
-        ArrayList<FavoriteListDetailModel> stock_list = new ArrayList<FavoriteListDetailModel>();
-        
-        //check member account exists.
-        if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
-            return responseError("查無會員帳號");
+    public JSONObject updateMember(MemberUpdateParam data) {
+        // 檢核會員帳號是否存在
+        MemberModel member = MemberRepo.FindByAccount(data.getAccount());
+        if (member == null) {
+            return responseError("會員帳號或密碼錯誤");
         }
 
-        //check list is exists and valid.
-        exist_list = ListNameRepo.FindListByMemberAndListNamee(member.getMid(), data.getList_name());
-        if (exist_list.size() == 0 || !exist_list.get(0).getStatus().equals("0")) 
-            return responseError("list_name: \"" + data.getList_name() + "\" 尚未創建");
-        
-        //update list status into invalid.
-        exist_list.get(0).setStatus("1");
-        ListNameRepo.save(exist_list.get(0));
+        // if input field not null ,and update member field
+        if (data.getPassword().length() != 0)
+            member.setMember_passwd(data.getPassword());
+        if (data.getName().length() != 0)
+            member.setName(data.getName());
+        if (data.getTelephone().length() != 0)
+            member.setTelephone(data.getTelephone());
+        if (data.getVerification().equals("Y"))
+            member.setIsValid("00");
+        member.setUpdate_user("system");
+        MemberRepo.save(member);
 
-        //update valid stock_list into invalid.
-        stock_list = ListDetailRepo.FindDetailByListNameId(exist_list.get(0).getList_name_id());
-        for(FavoriteListDetailModel stock_item : stock_list) {
-            if(!stock_item.getStatus().equals("0")) 
-                continue;
-            
-            stock_item.setStatus("1");
-            ListDetailRepo.save(stock_item);
-        }
-        return responseSuccess();
+        return responseUpdateMemberSuccess();
     }
 
     public JSONObject addFavoriteListName(FavoriteListNameParam data) {
@@ -109,6 +98,37 @@ public class MemberService {
         result_list.setUpdate_user("system");
         ListNameRepo.save(result_list);
 
+        return responseSuccess();
+    }
+
+    public JSONObject deleteFavoriteListName(FavoriteListNameParam data) {
+        MemberModel member = new MemberModel();
+        ArrayList<FavoriteListNameModel> exist_list = new ArrayList<FavoriteListNameModel>();
+        ArrayList<FavoriteListDetailModel> stock_list = new ArrayList<FavoriteListDetailModel>();
+
+        // check member account exists.
+        if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
+            return responseError("查無會員帳號");
+        }
+
+        // check list is exists and valid.
+        exist_list = ListNameRepo.FindListByMemberAndListNamee(member.getMid(), data.getList_name());
+        if (exist_list.size() == 0 || !exist_list.get(0).getStatus().equals("0"))
+            return responseError("list_name: \"" + data.getList_name() + "\" 尚未創建");
+
+        // update list status into invalid.
+        exist_list.get(0).setStatus("1");
+        ListNameRepo.save(exist_list.get(0));
+
+        // update valid stock_list into invalid.
+        stock_list = ListDetailRepo.FindDetailByListNameId(exist_list.get(0).getList_name_id());
+        for (FavoriteListDetailModel stock_item : stock_list) {
+            if (!stock_item.getStatus().equals("0"))
+                continue;
+
+            stock_item.setStatus("1");
+            ListDetailRepo.save(stock_item);
+        }
         return responseSuccess();
     }
 
@@ -234,6 +254,19 @@ public class MemberService {
         result.put("metadata", status_code);
         result.put("data", data);
 
+        return result;
+    }
+
+    private JSONObject responseUpdateMemberSuccess() {
+        JSONObject data = new JSONObject();
+        JSONObject status_code = new JSONObject();
+        JSONObject result = new JSONObject();
+
+        status_code.put("status", "success");
+        status_code.put("desc", "");
+
+        result.put("metadata", status_code);
+        result.put("data", data);
         return result;
     }
 

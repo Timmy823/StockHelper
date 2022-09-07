@@ -21,11 +21,11 @@ public class MemberController {
     @Autowired
     MemberService memberService;
 
-    @PostMapping("/member/deleteFavoriteListDetail")
+    @PostMapping("/member/deleteFavoriteListStock")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject deleteFavoriteListDetail(@Valid @RequestBody FavoriteListDetailDeleteParam input) {
+    public JSONObject deleteFavoriteListStock(@Valid @RequestBody FavoriteListDetailDeleteParam input) {
         try {
-            return memberService.deleteFavoriteListDetail(input);
+            return memberService.deleteFavoriteListStock(input);
         } catch (Exception io) {
             return memberService.responseError(io.toString());
         }

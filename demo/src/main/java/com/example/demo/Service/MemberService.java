@@ -47,7 +47,7 @@ public class MemberService {
     public MemberService() {
     }
 
-    public JSONObject deleteFavoriteListDetail(FavoriteListDetailDeleteParam data) {
+    public JSONObject deleteFavoriteListStock(FavoriteListDetailDeleteParam data) {
         MemberModel member = new MemberModel();
         ArrayList<FavoriteListNameModel> exist_list = new ArrayList<FavoriteListNameModel>();
         ArrayList<FavoriteListDetailModel> stock_list = new ArrayList<FavoriteListDetailModel>();

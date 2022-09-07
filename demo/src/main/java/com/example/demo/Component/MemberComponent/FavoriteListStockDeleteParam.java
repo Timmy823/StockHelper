@@ -8,7 +8,7 @@ import javax.validation.constraints.Size;
 import lombok.Data;
 
 @Data
-public class FavoriteListDetailDeleteParam {
+public class FavoriteListStockDeleteParam {
     @NotEmpty(message = "member_account不可為空")
     @Email(message = "必須email格式")
     private String account;
@@ -22,7 +22,7 @@ public class FavoriteListDetailDeleteParam {
     @NotEmpty(message = "stock_id不可為空")
     private String stock_id;
 
-    public FavoriteListDetailDeleteParam(String member_account, String favorite_list_name, String stock_id) {
+    public FavoriteListStockDeleteParam(String member_account, String favorite_list_name, String stock_id) {
         super();
         this.account = member_account;
         this.list_name = favorite_list_name;

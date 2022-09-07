@@ -68,6 +68,50 @@ public class TWSEService {
         return url_connection.getInputStream();
     }
 
+    public JSONObject getExtrangeTradedFundRatio(JSONObject type) {
+        try {
+            String [] radio_info_string = {"industry_radio", "asset_distribution", "top_10_stock_radio"};
+            JSONObject etf_ratio_info = new JSONObject();
+            //為了remove 字串前綴有編號 "3.聯電" in asset_distribution and top_10_stock table.  
+            String name_string;
+            
+            InputStream URLstream = openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
+            String line = null;
+            String alllines = "";
+            while ((line = buffer.readLine()) != null) {
+                alllines += line;
+            }
+
+            Document doc = Jsoup.parse(new String(alllines.getBytes("UTF-8"), "UTF-8"));
+            Elements divs = doc.select("div#main-2-QuoteHolding-Proxy");
+            Elements tables = divs.select("div").get(0).select("div.grid-item");
+
+            //get industry and aseet and top_10_stock table
+            for(int i=1 ; i < tables.size() && i < radio_info_string.length+1; i++) {
+                Elements radio_items = tables.get(i).select("li");
+                JSONArray radio_list = new JSONArray();
+                for(int j=0 ; j < radio_items.size() ; j++) {
+                    Elements columns = radio_items.get(j).select("div");
+    
+                    if(columns.size() != 3)
+                        continue;
+    
+                    JSONObject radio_info = new JSONObject();
+                    name_string = columns.get(0).text();
+                    radio_info.put("name", name_string.contains(".") ? name_string.substring(3) : name_string);
+                    radio_info.put("ratio", columns.get(2).text());
+                    radio_list.add(radio_info);
+                }
+                etf_ratio_info.put(radio_info_string[i-1], radio_list);
+            }
+            
+            return responsSuccessByJsonObject(etf_ratio_info);
+        } catch (IOException io) {
+            return responseError(io.toString());
+        }
+    }
+    
     public JSONObject getCompanyList(int type) {
         try {
             String get_company_list_redis_key = (type == 1) ? "listed_company_list" : "OTC_company_list";
@@ -436,6 +480,18 @@ public class TWSEService {
         result.put("metadata", status_code);
         result.put("data", json_array_data);
 
+        return result;
+    }
+
+    private JSONObject responsSuccessByJsonObject(JSONObject data) {
+        JSONObject status_code = new JSONObject();
+        JSONObject result = new JSONObject();
+
+        status_code.put("status", "success");
+        status_code.put("desc", "");
+
+        result.put("metadata", status_code);
+        result.put("data", data);
         return result;
     }
 

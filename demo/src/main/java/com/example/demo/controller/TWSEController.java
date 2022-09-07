@@ -91,4 +91,16 @@ public class TWSEController {
             return twse.responseError(io.toString());
         }
     }
+    
+    @GetMapping("/twse/getETFRatio")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject getExtrangeTradedFundRatio(@RequestBody JSONObject input, TWSEService stock) {
+        String stockUrl = "https://tw.stock.yahoo.com/quote/" + input.getString("stock_id") + "/holding";
+        try {
+            stock = new TWSEService(stockUrl, stringRedisTemplate);
+            return stock.getExtrangeTradedFundRatio(input);
+        } catch (IOException e) {
+            return stock.responseError(e.toString());
+        }
+    }
 }

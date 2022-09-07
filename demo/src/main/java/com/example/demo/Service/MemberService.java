@@ -59,7 +59,7 @@ public class MemberService {
         
         list_names = ListNameRepo.FindAllListByMember(member.getMid());
         if(list_names.size() == 0) {
-            return responseError("會員帳號名下查無清單");
+            return responseJSONArraySuccess(new JSONArray());
         }
 
         for(FavoriteListNameModel sub_list : list_names) {

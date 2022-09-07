@@ -61,7 +61,7 @@ public class MemberService {
 
         //traverse all exists lists name, and get stock list info to update stock comment
         for(FavoriteListNameModel list_item : exist_lists) {
-            stock_list = ListDetailRepo.FindStockByListNameId(list_item.getList_name_id(), data.getStock_id());
+            stock_list = ListDetailRepo.FindStockByListNameIdAndStockId(list_item.getList_name_id(), data.getStock_id());
             if(stock_list.size() == 0) 
                 continue;
 
@@ -84,7 +84,7 @@ public class MemberService {
             return responseError("查無會員帳號");
         }
 
-        exist_list = ListNameRepo.FindListByListName(member.getMid(), data.getList_name());
+        exist_list = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
         if (exist_list.size() > 1) {
             return responseError("list_name: \"" + data.getList_name() + "\" 重複" + exist_list.size() + "筆");
         }

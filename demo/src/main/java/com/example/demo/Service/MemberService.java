@@ -49,7 +49,7 @@ public class MemberService {
             return responseError("查無會員帳號");
         }
 
-        list_name = ListNameRepo.FindAllByListName(member.getMid(), data.getList_name());
+        list_name = ListNameRepo.FindAllByMemberAndListName(member.getMid(), data.getList_name());
         if (list_name.size() == 0) {
             return responseError("查無list_name: \"" + data.getList_name() + "\"無法新增");
         }
@@ -57,7 +57,7 @@ public class MemberService {
             return responseError("favorite list name資料異常，重複共" + list_name.size() + "筆");
         }
 
-        list_datail = ListDetailRepo.FindStockByListNameId(list_name.get(0).getList_name_id(), data.getStock_id());
+        list_datail = ListDetailRepo.FindListStockInfoByListNameIdAndStock(list_name.get(0).getList_name_id(), data.getStock_id());
         if (list_datail.size() >1) {
             return responseError("stock id資料異常，重複共" + list_datail.size() + "筆");
         }

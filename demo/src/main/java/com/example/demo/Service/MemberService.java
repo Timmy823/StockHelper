@@ -122,7 +122,6 @@ public class MemberService {
 
         String member_info_string = this.stringRedisTemplate.opsForValue().get(get_member_info_redis_key);
         if (member_info_string != null) {
-            System.out.println(member_info_string);
             return responseGetMemberInfoSuccess(JSONObject.fromObject(member_info_string));
         }
 

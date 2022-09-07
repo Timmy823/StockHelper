@@ -125,7 +125,7 @@ public class TWSEService {
 
     public JSONObject getCompanyDividendPolicy(String stock_id) {
         try {
-            String get_company_dividend_redis_key = stock_id + "_company_history_dividend_policy";
+            String get_company_dividend_redis_key = "company_history_dividend_policy : " + stock_id;
             int redis_ttl = 86400 * 7; // redis存活7天
 
             String company_dividend_string = this.stringRedisTemplate.opsForValue().get(get_company_dividend_redis_key);

@@ -2,6 +2,7 @@ package com.example.demo.Service;
 
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import net.sf.json.JSONObject;
 
@@ -21,6 +22,7 @@ import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -32,6 +34,7 @@ import lombok.Data;
 @Data
 @Service
 public class MemberService {
+    private StringRedisTemplate stringRedisTemplate;
     @Autowired
     private MemberRespository MemberRepo;
     @Autowired
@@ -39,7 +42,8 @@ public class MemberService {
     @Autowired
     private FavoriteListNameRespository ListNameRepo;
 
-    public MemberService() {
+    public MemberService(StringRedisTemplate stringRedisTemplate) {
+        this.stringRedisTemplate = stringRedisTemplate;
     }
 
     public JSONObject addFavoriteListName(FavoriteListNameParam data) {
@@ -106,6 +110,9 @@ public class MemberService {
             return responseError("會員帳號或密碼錯誤");
         }
 
+        String get_member_info_redis_key = data.getAccount() + "_member_info";
+        int redis_ttl = 3600; // redis存活 1 hour
+
         // add member login log data
         LoginLogModel loginlogModel = new LoginLogModel();
         loginlogModel.setMid_fk(member);
@@ -113,11 +120,20 @@ public class MemberService {
         loginlogModel.setUpdate_user("system");
         LoginLogRepo.save(loginlogModel);
 
+        String member_info_string = this.stringRedisTemplate.opsForValue().get(get_member_info_redis_key);
+        if (member_info_string != null) {
+            return responseGetMemberInfoSuccess(JSONObject.fromObject(member_info_string));
+        }
+
         response_data.put("member_account", member.getMember_account());
         response_data.put("name", member.getName());
         response_data.put("telephone", member.getTelephone());
         response_data.put("member_account_verification(Y/N)", member.getIsValid().equals("99") ? "N" : "Y");
         response_data.put("member_account_create_timestamp", member.getCreate_time().toString());
+
+        //set member info into redis
+        this.stringRedisTemplate.opsForValue().setIfAbsent(get_member_info_redis_key,
+            response_data.toString(), redis_ttl, TimeUnit.SECONDS);
 
         return responseGetMemberInfoSuccess(response_data);
     }

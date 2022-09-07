@@ -6,6 +6,7 @@ import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.demo.Component.MemberRegisterParam;
@@ -18,8 +19,11 @@ import com.example.demo.Service.MemberService;
 @EnableJpaAuditing
 public class MemberController {
     @Autowired
-    MemberService memberService;
+    private StringRedisTemplate stringRedisTemplate;
 
+    @Autowired
+    MemberService memberService = new MemberService(stringRedisTemplate);
+    
     @PostMapping("/member/addFavoriteListName")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
     public JSONObject addFavoriteListName(@Valid @RequestBody FavoriteListNameParam input) {

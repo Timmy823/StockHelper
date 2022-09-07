@@ -1,23 +1,19 @@
 package com.example.demo.Service;
 
+import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Random;
 
-import net.sf.json.JSONObject;
-
-import com.example.demo.Component.MemberRegisterParam;
-import com.example.demo.Component.MemberComponent.FavoriteListNameParam;
 import com.example.demo.Component.GetMemberInfoParam;
-
-import com.example.demo.Entity.MemberModel;
+import com.example.demo.Component.MemberRegisterParam;
+import com.example.demo.Component.MemberUpdateParam;
+import com.example.demo.Component.MemberComponent.FavoriteListNameParam;
 import com.example.demo.Entity.FavoriteListNameModel;
 import com.example.demo.Entity.LoginLogModel;
-
-import com.example.demo.Repository.MemberRespository;
+import com.example.demo.Entity.MemberModel;
 import com.example.demo.Repository.FavoriteListNameRespository;
 import com.example.demo.Repository.LoginLogRespository;
-
-import java.util.ArrayList;
+import com.example.demo.Repository.MemberRespository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -28,18 +24,42 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.stereotype.Service;
 
 import lombok.Data;
+import net.sf.json.JSONObject;
 
 @Data
 @Service
 public class MemberService {
     @Autowired
     private MemberRespository MemberRepo;
+
     @Autowired
     private LoginLogRespository LoginLogRepo;
     @Autowired
     private FavoriteListNameRespository ListNameRepo;
 
     public MemberService() {
+    }
+
+    public JSONObject updateMember(MemberUpdateParam data) {
+        // 檢核會員帳號是否存在
+        MemberModel member = MemberRepo.FindByAccount(data.getAccount());
+        if (member == null) {
+            return responseError("會員帳號或密碼錯誤");
+        }
+
+        // if input field not null ,and update member field
+        if (data.getPassword().length() != 0)
+            member.setMember_passwd(data.getPassword());
+        if (data.getName().length() != 0)
+            member.setName(data.getName());
+        if (data.getTelephone().length() != 0)
+            member.setTelephone(data.getTelephone());
+        if (data.getVerification().equals("Y"))
+            member.setIsValid("00");
+        member.setUpdate_user("system");
+        MemberRepo.save(member);
+
+        return responseUpdateMemberSuccess();
     }
 
     public JSONObject addFavoriteListName(FavoriteListNameParam data) {
@@ -199,6 +219,19 @@ public class MemberService {
         result.put("metadata", status_code);
         result.put("data", data);
 
+        return result;
+    }
+
+    private JSONObject responseUpdateMemberSuccess() {
+        JSONObject data = new JSONObject();
+        JSONObject status_code = new JSONObject();
+        JSONObject result = new JSONObject();
+
+        status_code.put("status", "success");
+        status_code.put("desc", "");
+
+        result.put("metadata", status_code);
+        result.put("data", data);
         return result;
     }
 

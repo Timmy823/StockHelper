@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Random;
 
-import net.minidev.json.JSONArray;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import com.example.demo.Component.MemberRegisterParam;

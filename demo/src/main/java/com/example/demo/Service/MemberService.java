@@ -71,7 +71,6 @@ public class MemberService {
                 ListNameRepo.save(list_name.get(0)); 
             }
             list_datail.get(0).setStatus("0");
-            list_datail.get(0).setComment(data.getStock_comment());
             ListDetailRepo.save(list_datail.get(0));
             return responseSuccess();
         }
@@ -80,7 +79,6 @@ public class MemberService {
         result_datail.setStock_id(data.getStock_id());
         result_datail.setStock_name(data.getStock_name());
         result_datail.setStatus("0");
-        result_datail.setComment(data.getStock_comment());
 
         result_datail.setCreate_user("system");
         result_datail.setUpdate_user("system");

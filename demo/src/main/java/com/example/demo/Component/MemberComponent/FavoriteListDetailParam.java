@@ -22,14 +22,11 @@ public class FavoriteListDetailParam {
     @NotEmpty(message = "stock_name不可為空")
     private String stock_name;
 
-    private String stock_comment;
-
-    public FavoriteListDetailParam(String member_account, String favorite_list_name, String stock_id, String stock_name, String comment) {
+    public FavoriteListDetailParam(String member_account, String favorite_list_name, String stock_id, String stock_name) {
         super();
         this.account = member_account;
         this.list_name = favorite_list_name;
         this.stock_id = stock_id;
         this.stock_name = stock_name;
-        this.stock_comment = comment;
     }
 }

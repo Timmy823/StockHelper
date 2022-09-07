@@ -2,13 +2,20 @@ package com.example.demo.Service;
 
 
 import com.example.demo.Component.MemberRegisterParam;
+import com.example.demo.Component.MemberComponent.FavoriteListDetailParam;
 import com.example.demo.Component.GetMemberInfoParam;
 
 import com.example.demo.Entity.MemberModel;
+import com.example.demo.Entity.FavoriteListDetailModel;
+import com.example.demo.Entity.FavoriteListNameModel;
 import com.example.demo.Entity.LoginLogModel;
 
 import com.example.demo.Repository.MemberRespository;
+import com.example.demo.Repository.FavoriteListDetailRespository;
+import com.example.demo.Repository.FavoriteListNameRespository;
 import com.example.demo.Repository.LoginLogRespository;
+
+import java.util.ArrayList;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,10 +30,63 @@ public class MemberService {
     private MemberRespository MemberRepo;
     @Autowired
     private LoginLogRespository LoginLogRepo;
+    @Autowired
+    private FavoriteListNameRespository ListNameRepo;
+    @Autowired
+    private FavoriteListDetailRespository ListDetailRepo;
     
     public MemberService() {
     }
 
+    public JSONObject addFavoriteListDetail(FavoriteListDetailParam data) {
+        MemberModel member = new MemberModel();
+        ArrayList<FavoriteListNameModel> list_name = new ArrayList<FavoriteListNameModel>();
+        ArrayList<FavoriteListDetailModel> list_datail = new ArrayList<FavoriteListDetailModel>();
+        FavoriteListDetailModel result_datail = new FavoriteListDetailModel();
+
+        //檢核會員帳號是否存在
+        if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
+            return responseError("查無會員帳號");
+        }
+
+        list_name = ListNameRepo.FindAllByMemberAndListName(member.getMid(), data.getList_name());
+        if (list_name.size() == 0) {
+            return responseError("查無list_name: \"" + data.getList_name() + "\"無法新增");
+        }
+        if (list_name.size() >1) {
+            return responseError("favorite list name資料異常，重複共" + list_name.size() + "筆");
+        }
+
+        list_datail = ListDetailRepo.FindListStockInfoByListNameIdAndStock(list_name.get(0).getList_name_id(), data.getStock_id());
+        if (list_datail.size() >1) {
+            return responseError("stock id資料異常，重複共" + list_datail.size() + "筆");
+        }
+        if (list_datail.size() != 0) {
+            if(list_datail.get(0).getStatus().equals("0")) {
+                return responseError("資料已創建");
+            }
+            //list is exist and status invalid, update list status to valid.
+            if(!list_name.get(0).getStatus().equals("0")) {
+                list_name.get(0).setStatus("0");
+                ListNameRepo.save(list_name.get(0)); 
+            }
+            list_datail.get(0).setStatus("0");
+            ListDetailRepo.save(list_datail.get(0));
+            return responseSuccess();
+        }
+
+        result_datail.setList_name_id(list_name.get(0).getList_name_id());
+        result_datail.setStock_id(data.getStock_id());
+        result_datail.setStock_name(data.getStock_name());
+        result_datail.setStatus("0");
+
+        result_datail.setCreate_user("system");
+        result_datail.setUpdate_user("system");
+        ListDetailRepo.save(result_datail);
+
+        return responseSuccess();
+    }
+    
     public JSONObject createMember(MemberRegisterParam data) {
         //檢核會員帳號是否存在
         if((MemberRepo.FindByAccount(data.getAccount())) != null) {
@@ -44,7 +104,7 @@ public class MemberService {
         memberModel.setUpdate_user("system");
         MemberRepo.save(memberModel);
 
-        return responseCreateMemberSuccess();
+        return responseSuccess();
     }
     
     public JSONObject getMemberInfo(GetMemberInfoParam data) {
@@ -72,7 +132,7 @@ public class MemberService {
         return responseGetMemberInfoSuccess(response_data);
     }
 
-    private JSONObject responseCreateMemberSuccess() {
+    private JSONObject responseSuccess() {
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();

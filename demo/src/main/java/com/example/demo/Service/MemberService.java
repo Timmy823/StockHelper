@@ -57,7 +57,7 @@ public class MemberService {
         }
 
         //check list is exists and valid.
-        exist_list = ListNameRepo.FindListByListName(member.getMid(), data.getList_name());
+        exist_list = ListNameRepo.FindListByMemberAndListNamee(member.getMid(), data.getList_name());
         if (exist_list.size() == 0 || !exist_list.get(0).getStatus().equals("0")) 
             return responseError("list_name: \"" + data.getList_name() + "\" 尚未創建");
         
@@ -86,7 +86,7 @@ public class MemberService {
             return responseError("查無會員帳號");
         }
 
-        exist_list = ListNameRepo.FindListByListName(member.getMid(), data.getList_name());
+        exist_list = ListNameRepo.FindListByMemberAndListNamee(member.getMid(), data.getList_name());
         if (exist_list.size() > 1) {
             return responseError("list_name: \"" + data.getList_name() + "\" 重複" + exist_list.size() + "筆");
         }

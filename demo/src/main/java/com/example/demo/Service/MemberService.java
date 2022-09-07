@@ -10,10 +10,12 @@ import com.example.demo.Component.MemberComponent.FavoriteListNameParam;
 import com.example.demo.Component.GetMemberInfoParam;
 
 import com.example.demo.Entity.MemberModel;
+import com.example.demo.Entity.FavoriteListDetailModel;
 import com.example.demo.Entity.FavoriteListNameModel;
 import com.example.demo.Entity.LoginLogModel;
 
 import com.example.demo.Repository.MemberRespository;
+import com.example.demo.Repository.FavoriteListDetailRespository;
 import com.example.demo.Repository.FavoriteListNameRespository;
 import com.example.demo.Repository.LoginLogRespository;
 
@@ -38,8 +40,41 @@ public class MemberService {
     private LoginLogRespository LoginLogRepo;
     @Autowired
     private FavoriteListNameRespository ListNameRepo;
+    @Autowired
+    private FavoriteListDetailRespository ListDetailRepo;
 
     public MemberService() {
+    }
+
+    public JSONObject deleteFavoriteListName(FavoriteListNameParam data) {
+        MemberModel member = new MemberModel();
+        ArrayList<FavoriteListNameModel> exist_list = new ArrayList<FavoriteListNameModel>();
+        ArrayList<FavoriteListDetailModel> stock_list = new ArrayList<FavoriteListDetailModel>();
+        
+        //check member account exists.
+        if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
+            return responseError("查無會員帳號");
+        }
+
+        //check list is exists and valid.
+        exist_list = ListNameRepo.FindListByMemberAndListNamee(member.getMid(), data.getList_name());
+        if (exist_list.size() == 0 || !exist_list.get(0).getStatus().equals("0")) 
+            return responseError("list_name: \"" + data.getList_name() + "\" 尚未創建");
+        
+        //update list status into invalid.
+        exist_list.get(0).setStatus("1");
+        ListNameRepo.save(exist_list.get(0));
+
+        //update valid stock_list into invalid.
+        stock_list = ListDetailRepo.FindDetailByListNameId(exist_list.get(0).getList_name_id());
+        for(FavoriteListDetailModel stock_item : stock_list) {
+            if(!stock_item.getStatus().equals("0")) 
+                continue;
+            
+            stock_item.setStatus("1");
+            ListDetailRepo.save(stock_item);
+        }
+        return responseSuccess();
     }
 
     public JSONObject addFavoriteListName(FavoriteListNameParam data) {
@@ -51,7 +86,7 @@ public class MemberService {
             return responseError("查無會員帳號");
         }
 
-        exist_list = ListNameRepo.FindMemberByListName(member.getMid(), data.getList_name());
+        exist_list = ListNameRepo.FindListByMemberAndListNamee(member.getMid(), data.getList_name());
         if (exist_list.size() > 1) {
             return responseError("list_name: \"" + data.getList_name() + "\" 重複" + exist_list.size() + "筆");
         }

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.demo.Component.MemberUpdateParam;
 import com.example.demo.Component.MemberRegisterParam;
 import com.example.demo.Component.MemberComponent.FavoriteListNameParam;
 import com.example.demo.Component.GetMemberInfoParam;
@@ -23,7 +24,17 @@ public class MemberController {
 
     @Autowired
     MemberService memberService = new MemberService(stringRedisTemplate);
-    
+
+    @PostMapping("/member/deleteFavoriteListName")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject deleteFavoriteListName(@Valid @RequestBody FavoriteListNameParam input) {
+        try {
+            return memberService.deleteFavoriteListName(input);
+        } catch (Exception io) {
+            return memberService.responseError(io.toString());
+        }
+    }
+
     @PostMapping("/member/addFavoriteListName")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
     public JSONObject addFavoriteListName(@Valid @RequestBody FavoriteListNameParam input) {
@@ -49,6 +60,16 @@ public class MemberController {
     public JSONObject getMemberInfo(@Valid @RequestBody GetMemberInfoParam input) {
         try {
             return memberService.getMemberInfo(input);
+        } catch (Exception io) {
+            return memberService.responseError(io.toString());
+        }
+    }
+
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    @PostMapping("/member/updateMember")
+    public JSONObject updateMember(@Valid @RequestBody MemberUpdateParam input) {
+        try {
+            return memberService.updateMember(input);
         } catch (Exception io) {
             return memberService.responseError(io.toString());
         }

@@ -6,46 +6,39 @@ import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 
-import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Comment;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.stereotype.Component;
 
+
 @Component
 @Entity
 @Data
-@Table(name = "member")
+@Table(name = "favorite_list_detail")
 @EntityListeners(AuditingEntityListener.class)
-public class MemberModel {
+public class FavoriteListDetailModel {
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "uuid2")
-    @Column(name = "mid", unique = true, columnDefinition = "BINARY(36)")
-    private String mid;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "list_detail_id", unique = true)
+    private Long list_detail_id;
 
-    @NotEmpty
-    @NotBlank
-    @Column(name = "member_account", nullable = false, length = 350)
-    private String member_account;
+    @Column(name = "list_name_id", nullable = false, columnDefinition = "BINARY(36)")
+    private String list_name_id;
 
-    @NotEmpty
-    @NotBlank
-    @Column(name = "member_passwd", nullable = false, length = 16)
-    private String member_passwd;
+    @Column(name = "stock_id", nullable = false, length = 15)
+    private String stock_id;
 
-    @NotEmpty
-    @NotBlank
-    @Column(name = "name", nullable = false, length = 50)
-    private String name;
+    @Column(name = "stock_name", nullable = false, length = 50)
+    private String stock_name;
 
-    @Column(name = "telephone", length = 11)
-    private String telephone;
+    @Column(name = "comment", length = 200)
+    private String comment;
 
-    @NotEmpty
-    @NotBlank
-    @Column(name = "is_valid", nullable = false, length = 2)
-    private String IsValid;
+    @Comment("0為有效，1為無效")
+    @Column(name = "status", nullable = false, length = 1)
+    private String status;
 
     @CreatedDate
     @Temporal(TemporalType.TIMESTAMP)
@@ -66,7 +59,4 @@ public class MemberModel {
     @NotBlank
     @Column(name = "update_user", nullable = false, updatable = true, length = 10)
     private String update_user;
-
-    public MemberModel() {
-    }
 }

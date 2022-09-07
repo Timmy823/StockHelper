@@ -9,6 +9,7 @@ import lombok.Data;
 
 @Data
 public class FavoriteListStockDeleteParam {
+    @NotNull(message = "member_account不可為null")
     @NotEmpty(message = "member_account不可為空")
     @Email(message = "必須email格式")
     private String account;

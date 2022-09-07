@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.demo.Component.MemberRegisterParam;
-import com.example.demo.Component.MemberComponent.FavoriteListDetailDeleteParam;
+import com.example.demo.Component.MemberComponent.FavoriteListStockDeleteParam;
 import com.example.demo.Component.MemberComponent.FavoriteListNameParam;
 import com.example.demo.Component.GetMemberInfoParam;
 
@@ -23,7 +23,7 @@ public class MemberController {
 
     @PostMapping("/member/deleteFavoriteListStock")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject deleteFavoriteListStock(@Valid @RequestBody FavoriteListDetailDeleteParam input) {
+    public JSONObject deleteFavoriteListStock(@Valid @RequestBody FavoriteListStockDeleteParam input) {
         try {
             return memberService.deleteFavoriteListStock(input);
         } catch (Exception io) {

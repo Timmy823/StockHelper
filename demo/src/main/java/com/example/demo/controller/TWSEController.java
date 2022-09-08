@@ -91,4 +91,18 @@ public class TWSEController {
             return twse.responseError(io.toString());
         }
     }
+
+    @GetMapping("/twse/getStockEps")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject getStockEps(@RequestBody JSONObject input, TWSEService twse) {
+        String id = input.getString("stock_id");
+        String stockUrl = "https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.revenues;includedFields=priceAssessment;period=quarter;symbol=" + id;
+        try {
+            twse = new TWSEService(stockUrl, stringRedisTemplate);
+            return twse.getStockEps();
+        } catch (IOException io) {
+            io.printStackTrace();
+            return twse.responseError(io.toString());
+        }
+    }
 }

@@ -19,6 +19,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+import com.example.demo.Component.StockComponent.StockIdParam;
+
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -68,6 +70,80 @@ public class TWSEService {
         return url_connection.getInputStream();
     }
 
+    public JSONObject getCompanyMonthlyProductRevenueRaio(StockIdParam data) {
+        try {
+            JSONArray result_Array = new JSONArray();
+
+            // ArrayList<String> ignore_string = new ArrayList<>();
+            // ignore_string.add("(");
+            // ignore_string.add(")");
+            
+            InputStream URLstream = openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
+            String line = null;
+            String alllines = "";
+            while ((line = buffer.readLine()) != null) {
+                alllines += line;
+            }
+            Document doc = Jsoup.parse(new String(alllines.getBytes("UTF-8"), "UTF-8"));
+            Elements ratio_columns = doc.select("div#divSaleMonProdData").select("div#divDetail").select("tr[align=center]");
+
+            JSONArray product_array = new JSONArray();
+            JSONObject product_item = new JSONObject();
+            JSONObject revenue = new JSONObject();  
+            for(int i=0; i<ratio_columns.size(); i++) {
+                Elements column = ratio_columns.get(i).select("td");
+                
+                //new monthly revenue
+                if(column.size() == 16) {
+                    //put product_array to revenue
+                    if(product_array.size() != 0) {
+                        revenue.put("detail", product_array);
+                        result_Array.add(revenue);
+                    }
+                    
+                    product_array = new JSONArray();
+                    revenue = new JSONObject();
+                    product_item = new JSONObject(); 
+                    //initail product_item is "-"
+                    product_item.put("name", "-");
+                    product_item.put("ratio", "-");
+                    product_item.put("MoM", "-");
+                    product_item.put("YoY", "-");
+                    //put product ratio data into product_item. example:  (1) 晶圓,1065,90.8,-4.76,+14.7
+                    if(column.get(7).text().contains("(")) {
+                        product_item.put("name", column.get(8).text());
+                        product_item.put("ratio", column.get(10).text());
+                        product_item.put("MoM", column.get(11).text());
+                        product_item.put("YoY", column.get(12).text());
+                    }
+                    product_array.add(product_item);
+
+                    revenue.put("date", column.get(0).text());
+                }
+                //product ratio for monthly revenue
+                if(column.size() == 9) {
+                    //skip not a product ratio data
+                    if(!column.get(0).text().contains("(") && !column.get(0).text().contains("減"))
+                        continue;
+
+                    product_item = new JSONObject();
+                    product_item.put("name", column.get(1).text());
+                    product_item.put("ratio", column.get(3).text());
+                    product_item.put("MoM", column.get(4).text());
+                    product_item.put("YoY", column.get(5).text());
+                    product_array.add(product_item);
+                }
+            }
+            //put the final product_array into revenue
+            revenue.put("detail", product_array);
+            result_Array.add(revenue);
+            return responseSuccess(result_Array);
+        } catch (IOException io) {
+            return responseError(io.toString());
+        }
+        
+    }
     public JSONObject getCompanyList(int type) {
         try {
             String get_company_list_redis_key = (type == 1) ? "listed_company_list" : "OTC_company_list";

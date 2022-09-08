@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.validation.Valid;
 
 import com.example.demo.Component.StockTradeInfoParam;
+import com.example.demo.Component.StockComponent.StockIdParam;
 import com.example.demo.Service.TWSEService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,6 +87,19 @@ public class TWSEController {
         try {
             twse = new TWSEService(stockUrl, stringRedisTemplate);
             return twse.getStockTradeInfo(input_type, specific_date);
+        } catch (IOException io) {
+            io.printStackTrace();
+            return twse.responseError(io.toString());
+        }
+    }
+    
+    @GetMapping("/twse/getCompanyMonthlyProductRevenueRaio")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject getCompanyMonthlyProductRevenueRaio(@Valid @RequestBody StockIdParam input, TWSEService twse) {
+        String stockUrl = "https://goodinfo.tw/tw/ShowSaleMonProdChart.asp?STOCK_ID=" + input.getStock_id();
+        try {
+            twse = new TWSEService(stockUrl, stringRedisTemplate);
+            return twse.getCompanyMonthlyProductRevenueRaio(input);
         } catch (IOException io) {
             io.printStackTrace();
             return twse.responseError(io.toString());

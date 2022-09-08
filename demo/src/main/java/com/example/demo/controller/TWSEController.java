@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.validation.Valid;
 
 import com.example.demo.Component.StockTradeInfoParam;
+import com.example.demo.Component.StockComponent.StockIdParam;
 import com.example.demo.Service.TWSEService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -94,9 +95,8 @@ public class TWSEController {
 
     @GetMapping("/twse/getStockEps")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject getStockEps(@RequestBody JSONObject input, TWSEService twse) {
-        String id = input.getString("stock_id");
-        String stockUrl = "https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.revenues;includedFields=priceAssessment;period=quarter;symbol=" + id;
+    public JSONObject getStockEps(@Valid @RequestBody StockIdParam input, TWSEService twse) {
+        String stockUrl = "https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.revenues;includedFields=priceAssessment;period=quarter;symbol=" + input.getStock_id();
         try {
             twse = new TWSEService(stockUrl, stringRedisTemplate);
             return twse.getStockEps(input);

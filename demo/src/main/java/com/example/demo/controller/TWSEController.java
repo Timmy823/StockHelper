@@ -99,7 +99,7 @@ public class TWSEController {
         String stockUrl = "https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.revenues;includedFields=priceAssessment;period=quarter;symbol=" + id;
         try {
             twse = new TWSEService(stockUrl, stringRedisTemplate);
-            return twse.getStockEps();
+            return twse.getStockEps(input);
         } catch (IOException io) {
             io.printStackTrace();
             return twse.responseError(io.toString());

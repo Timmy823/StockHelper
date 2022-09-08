@@ -67,8 +67,17 @@ public class TWSEService {
 
         return url_connection.getInputStream();
     }
-    public JSONObject getStockEps() {
+    public JSONObject getStockEps(JSONObject data) {
         try {
+            //check redis
+            String stock_eps_redis_key = "eps : " + data.getString("stock_id");
+            int redis_ttl = 86400 * 3; // redis存活3天
+
+            String eps_string = this.stringRedisTemplate.opsForValue().get(stock_eps_redis_key);
+            if (eps_string != null) {
+                return responseSuccess(JSONArray.fromObject(eps_string));
+            }
+
             JSONArray eps_array = new JSONArray();
             JSONObject revenue_item = new JSONObject();
             String[] belong_date;
@@ -90,7 +99,7 @@ public class TWSEService {
             Q4.add("10");
             Q4.add("11");
             Q4.add("12");
-            
+
             InputStream URLstream = openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
             String line = null;
@@ -100,7 +109,7 @@ public class TWSEService {
             }
 
             JSONArray revenues = JSONObject.fromObject(alllines)
-                .getJSONObject("data").getJSONObject("result").getJSONArray("revenues");
+                    .getJSONObject("data").getJSONObject("result").getJSONArray("revenues");
 
             for(int i = 0; i< revenues.size(); i++) {
                 JSONObject eps_item = new JSONObject();
@@ -124,6 +133,9 @@ public class TWSEService {
                 eps_item.put("epsYoY", revenue_item.getString("epsYoY"));
                 eps_array.add(eps_item);
             }
+            
+            this.stringRedisTemplate.opsForValue().setIfAbsent(stock_eps_redis_key,
+                    eps_array.toString(), redis_ttl, TimeUnit.SECONDS);
             return responseSuccess(eps_array);
         } catch (IOException io) {
             return responseError(io.toString());

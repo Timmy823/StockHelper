@@ -68,6 +68,69 @@ public class TWSEService {
         return url_connection.getInputStream();
     }
 
+    public JSONObject getMarginPurchaseAndShortSaleAmountDaily(String stock_id, String specified_date) {
+        try {
+            String redis_key = "margin_purchase_and_short_sale_amount_" + specified_date + ":" + stock_id;
+            int redis_ttl = 86400; // redis存活一天
+
+            String amount_string = this.stringRedisTemplate.opsForValue().get(redis_key);
+            if (amount_string != null) {
+                return responseSuccess(JSONArray.fromObject(amount_string));
+            }
+
+            String[] item_string = {"buy", "sell", "repayment", "balance_yesterday", "balance", "position_limit"};
+            
+            JSONArray amount_array = new JSONArray();
+            JSONObject amount_item = new JSONObject();
+            JSONObject margin_purchase_item = new JSONObject();
+            JSONObject short_sale_item = new JSONObject();
+            //get data from url.
+            JSONArray stock_item = new JSONArray();
+
+            InputStream URLstream = openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
+            String line = null;
+            String alllines = "";
+            while ((line = buffer.readLine()) != null) {
+                alllines += line;
+            }
+            JSONArray data = JSONObject.fromObject(alllines).getJSONArray("data");
+            for (int i=0 ; i<data.size() ; i++) {
+                stock_item = data.getJSONArray(i);
+
+                if(!stock_item.get(0).equals(stock_id))
+                    continue;
+
+                margin_purchase_item.put(item_string[0], stock_item.get(2));
+                margin_purchase_item.put(item_string[1], stock_item.get(3));
+                margin_purchase_item.put(item_string[2], stock_item.get(4));
+                margin_purchase_item.put(item_string[3], stock_item.get(5));
+                margin_purchase_item.put(item_string[4], stock_item.get(6));
+                margin_purchase_item.put(item_string[5], stock_item.get(7));
+
+                short_sale_item.put(item_string[0], stock_item.get(8));
+                short_sale_item.put(item_string[1], stock_item.get(9));
+                short_sale_item.put(item_string[2], stock_item.get(10));
+                short_sale_item.put(item_string[3], stock_item.get(11));
+                short_sale_item.put(item_string[4], stock_item.get(12));
+                short_sale_item.put(item_string[5], stock_item.get(13));
+
+                amount_item.put("margin_purchase", margin_purchase_item);
+                amount_item.put("short_sale", short_sale_item);
+                amount_item.put("offset_of_margin_purchasing_and_short_selling", stock_item.get(14));
+                amount_array.add(amount_item);
+                break;
+            }
+
+            this.stringRedisTemplate.opsForValue().setIfAbsent(redis_key,
+            amount_array.toString(), redis_ttl, TimeUnit.SECONDS);
+
+            return responseSuccess(amount_array);
+        } catch (IOException io) {
+            return responseError(io.toString());
+        }
+    }
+
     public JSONObject getCompanyList(int type) {
         try {
             String get_company_list_redis_key = (type == 1) ? "listed_company_list" : "OTC_company_list";

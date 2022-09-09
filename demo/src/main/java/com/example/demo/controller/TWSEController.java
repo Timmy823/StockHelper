@@ -9,14 +9,18 @@ import com.example.demo.Service.TWSEService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import javax.validation.constraints.*;
 
 import net.sf.json.JSONObject;
 
 @RestController
+@Validated
 public class TWSEController {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
@@ -89,6 +93,29 @@ public class TWSEController {
         } catch (IOException io) {
             io.printStackTrace();
             return twse.responseError(io.toString());
+        }
+    }
+
+    @GetMapping("/twse/getMarginPurchaseAndShortSaleAmount")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject getMarginPurchaseAndShortSaleAmountDaily(TWSEService stock, 
+            @RequestParam("stock_id") 
+            @NotNull(message = "stock_id can not be null.")
+            @NotEmpty(message = "stock_id can not be empty.")
+            String stock_id , 
+
+            @Pattern(regexp = "^(((?:19|20)[0-9]{2})(0?[1-9]|1[012])(0?[1-9]|[12][0-9]|3[01]))$" , message = "格式錯誤")
+            @RequestParam("specified_date") 
+            String specified_date) {
+
+        String stockUrl = "https://www.twse.com.tw/exchangeReport/MI_MARGN?response=json&date=" + specified_date + "&selectType=ALL";
+        System.out.println(stockUrl);
+        try {
+            stock = new TWSEService(stockUrl, stringRedisTemplate);
+            return stock.getMarginPurchaseAndShortSaleAmountDaily(stock_id, specified_date);
+        } catch (IOException io) {
+            io.printStackTrace();
+            return stock.responseError(io.toString());
         }
     }
 }

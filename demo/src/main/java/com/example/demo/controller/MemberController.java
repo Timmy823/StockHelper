@@ -1,6 +1,7 @@
 package com.example.demo.Controller;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 
 import com.example.demo.Component.GetMemberInfoParam;
 import com.example.demo.Component.MemberRegisterParam;
@@ -15,16 +16,19 @@ import com.example.demo.Service.MemberService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import net.sf.json.JSONObject;
 
 @RestController
 @EnableJpaAuditing
+@Validated
 public class MemberController {
     private StringRedisTemplate stringRedisTemplate;
 
@@ -73,9 +77,12 @@ public class MemberController {
 
     @CrossOrigin(origins = "*", allowedHeaders = "*")
     @GetMapping("/member/getFavoriteList")
-    public JSONObject getFavoriteList(@Valid @RequestBody JSONObject input) {
+    public JSONObject getFavoriteList (
+            @RequestParam("member_account")
+            @NotEmpty(message = "it can not be empty.")
+            String member_account) {
         try {
-            return memberService.getFavoriteList(input);
+            return memberService.getFavoriteList(member_account);
         } catch (Exception io) {
             return memberService.responseError(io.toString());
         }

@@ -93,13 +93,13 @@ public class TWSEController {
         }
     }
     
-    @GetMapping("/twse/getCompanyMonthlyProductRevenueRaio")
+    @GetMapping("/twse/getCompanyMonthlyProductRevenueRatio")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject getCompanyMonthlyProductRevenueRaio(@Valid @RequestBody StockIdParam input, TWSEService twse) {
+    public JSONObject getCompanyMonthlyProductRevenueRatio(@Valid @RequestBody StockIdParam input, TWSEService twse) {
         String stockUrl = "https://goodinfo.tw/tw/ShowSaleMonProdChart.asp?STOCK_ID=" + input.getStock_id();
         try {
             twse = new TWSEService(stockUrl, stringRedisTemplate);
-            return twse.getCompanyMonthlyProductRevenueRaio(input);
+            return twse.getCompanyMonthlyProductRevenueRatio(input);
         } catch (IOException io) {
             io.printStackTrace();
             return twse.responseError(io.toString());

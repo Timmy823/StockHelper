@@ -70,13 +70,18 @@ public class TWSEService {
         return url_connection.getInputStream();
     }
 
-    public JSONObject getCompanyMonthlyProductRevenueRaio(StockIdParam data) {
+    public JSONObject getCompanyMonthlyProductRevenueRatio(StockIdParam data) {
         try {
-            JSONArray result_Array = new JSONArray();
+            String[] product_ratio_item = {"name", "ratio", "MoM", "YoY"};
+            String get_product_ratio_redis_key = "monthly_product_revenue_ratio : " + data.getStock_id();
+            int redis_ttl = 86400 * 3 ; // redis存活3天
 
-            // ArrayList<String> ignore_string = new ArrayList<>();
-            // ignore_string.add("(");
-            // ignore_string.add(")");
+            String product_ratio_string = this.stringRedisTemplate.opsForValue().get(get_product_ratio_redis_key);
+            if (product_ratio_string != null) {
+                return responseSuccess(JSONArray.fromObject(product_ratio_string));
+            }
+
+            JSONArray result_Array = new JSONArray();
             
             InputStream URLstream = openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
@@ -106,16 +111,16 @@ public class TWSEService {
                     revenue = new JSONObject();
                     product_item = new JSONObject(); 
                     //initail product_item is "-"
-                    product_item.put("name", "-");
-                    product_item.put("ratio", "-");
-                    product_item.put("MoM", "-");
-                    product_item.put("YoY", "-");
+                    product_item.put(product_ratio_item[0], "-");
+                    product_item.put(product_ratio_item[1], "-");
+                    product_item.put(product_ratio_item[2], "-");
+                    product_item.put(product_ratio_item[3], "-");
                     //put product ratio data into product_item. example:  (1) 晶圓,1065,90.8,-4.76,+14.7
                     if(column.get(7).text().contains("(")) {
-                        product_item.put("name", column.get(8).text());
-                        product_item.put("ratio", column.get(10).text());
-                        product_item.put("MoM", column.get(11).text());
-                        product_item.put("YoY", column.get(12).text());
+                        product_item.put(product_ratio_item[0], column.get(8).text());
+                        product_item.put(product_ratio_item[1], column.get(10).text());
+                        product_item.put(product_ratio_item[2], column.get(11).text());
+                        product_item.put(product_ratio_item[3], column.get(12).text());
                     }
                     product_array.add(product_item);
 
@@ -128,16 +133,20 @@ public class TWSEService {
                         continue;
 
                     product_item = new JSONObject();
-                    product_item.put("name", column.get(1).text());
-                    product_item.put("ratio", column.get(3).text());
-                    product_item.put("MoM", column.get(4).text());
-                    product_item.put("YoY", column.get(5).text());
+                    product_item.put(product_ratio_item[0], column.get(1).text());
+                    product_item.put(product_ratio_item[1], column.get(3).text());
+                    product_item.put(product_ratio_item[2], column.get(4).text());
+                    product_item.put(product_ratio_item[3], column.get(5).text());
                     product_array.add(product_item);
                 }
             }
             //put the final product_array into revenue
             revenue.put("detail", product_array);
             result_Array.add(revenue);
+
+            this.stringRedisTemplate.opsForValue().setIfAbsent(get_product_ratio_redis_key,
+                    result_Array.toString(), redis_ttl, TimeUnit.SECONDS);
+
             return responseSuccess(result_Array);
         } catch (IOException io) {
             return responseError(io.toString());

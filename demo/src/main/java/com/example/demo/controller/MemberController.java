@@ -7,6 +7,7 @@ import com.example.demo.Component.MemberRegisterParam;
 import com.example.demo.Component.MemberUpdateParam;
 import com.example.demo.Component.MemberComponent.FavoriteListDetailParam;
 import com.example.demo.Component.MemberComponent.FavoriteListNameParam;
+import com.example.demo.Component.MemberComponent.FavoriteListStockCommentParam;
 import com.example.demo.Component.MemberComponent.FavoriteListStockDeleteParam;
 import com.example.demo.Service.MemberService;
 
@@ -28,46 +29,6 @@ public class MemberController {
 
     @Autowired
     MemberService memberService = new MemberService(stringRedisTemplate);
-
-    @PostMapping("/member/deleteFavoriteListName")
-    @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject deleteFavoriteListName(@Valid @RequestBody FavoriteListNameParam input) {
-        try {
-            return memberService.deleteFavoriteListName(input);
-        } catch (Exception io) {
-            return memberService.responseError(io.toString());
-        }
-    }
-
-    @PostMapping("/member/deleteFavoriteListStock")
-    @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject deleteFavoriteListStock(@Valid @RequestBody FavoriteListStockDeleteParam input) {
-        try {
-            return memberService.deleteFavoriteListStock(input);
-        } catch (Exception io) {
-            return memberService.responseError(io.toString());
-        }
-    }
-
-    @PostMapping("/member/addFavoriteListName")
-    @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject addFavoriteListName(@Valid @RequestBody FavoriteListNameParam input) {
-        try {
-            return memberService.addFavoriteListName(input);
-        } catch (Exception io) {
-            return memberService.responseError(io.toString());
-        }
-    }
-
-    @PostMapping("/member/addFavoriteListStock")
-    @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject addFavoriteListDetail(@Valid @RequestBody FavoriteListDetailParam input) {
-        try {
-            return memberService.addFavoriteListDetail(input);
-        } catch (Exception io) {
-            return memberService.responseError(io.toString());
-        }
-    }
 
     @PostMapping("/member/createMember")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
@@ -104,6 +65,56 @@ public class MemberController {
     public JSONObject SendEmailCertification(@RequestBody JSONObject input) {
         try {
             return memberService.SendEmailCertification(input);
+        } catch (Exception io) {
+            return memberService.responseError(io.toString());
+        }
+    }
+
+    @PostMapping("/member/addFavoriteListName")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject addFavoriteListName(@Valid @RequestBody FavoriteListNameParam input) {
+        try {
+            return memberService.addFavoriteListName(input);
+        } catch (Exception io) {
+            return memberService.responseError(io.toString());
+        }
+    }
+
+    @PostMapping("/member/deleteFavoriteListName")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject deleteFavoriteListName(@Valid @RequestBody FavoriteListNameParam input) {
+        try {
+            return memberService.deleteFavoriteListName(input);
+        } catch (Exception io) {
+            return memberService.responseError(io.toString());
+        }
+    }
+
+    @PostMapping("/member/addFavoriteListStock")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject addFavoriteListStock(@Valid @RequestBody FavoriteListDetailParam input) {
+        try {
+            return memberService.addFavoriteListStock(input);
+        } catch (Exception io) {
+            return memberService.responseError(io.toString());
+        }
+    }
+
+    @PostMapping("/member/deleteFavoriteListStock")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject deleteFavoriteListStock(@Valid @RequestBody FavoriteListStockDeleteParam input) {
+        try {
+            return memberService.deleteFavoriteListStock(input);
+        } catch (Exception io) {
+            return memberService.responseError(io.toString());
+        }
+    }
+
+    @PostMapping("/member/updateFavoriteListStockComment")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject updateFavoriteListStockComment(@Valid @RequestBody FavoriteListStockCommentParam input) {
+        try {
+            return memberService.updateFavoriteListStockComment(input);
         } catch (Exception io) {
             return memberService.responseError(io.toString());
         }

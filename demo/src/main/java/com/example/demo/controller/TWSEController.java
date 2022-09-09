@@ -3,6 +3,7 @@ package com.example.demo.Controller;
 import java.io.IOException;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
 
@@ -45,9 +46,11 @@ public class TWSEController {
 
     @GetMapping("/twse/getCompanyProfile")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject getCompanyInfoProfile(@RequestParam JSONObject input, TWSEService stock) {
-        Integer stockid = input.getInt("id");
-        String stockUrl = "https://tw.stock.yahoo.com/quote/" + stockid + "/profile";
+    public JSONObject getCompanyInfoProfile(TWSEService stock, 
+            @RequestParam("stock_id")
+            @NotEmpty(message = "it can not be empty.")
+            String stock_id) {
+        String stockUrl = "https://tw.stock.yahoo.com/quote/" + stock_id + "/profile";
         try {
             stock = new TWSEService(stockUrl, stringRedisTemplate);
             return stock.getCompanyInfoProfile();

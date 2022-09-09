@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,14 +25,13 @@ import net.sf.json.JSONObject;
 @RestController
 @EnableJpaAuditing
 public class MemberController {
-    @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
     @Autowired
     MemberService memberService = new MemberService(stringRedisTemplate);
 
-    @PostMapping("/member/createMember")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
+    @PostMapping("/member/createMember")
     public JSONObject createMember(@Valid @RequestBody MemberRegisterParam input) {
         try {
             return memberService.createMember(input);
@@ -40,8 +40,8 @@ public class MemberController {
         }
     }
 
-    @PostMapping("/member/getMemberInfo")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
+    @PostMapping("/member/getMemberInfo")
     public JSONObject getMemberInfo(@Valid @RequestBody GetMemberInfoParam input) {
         try {
             return memberService.getMemberInfo(input);
@@ -70,8 +70,18 @@ public class MemberController {
         }
     }
 
-    @PostMapping("/member/addFavoriteListName")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
+    @GetMapping("/member/getFavoriteList")
+    public JSONObject getFavoriteList(@Valid @RequestBody JSONObject input) {
+        try {
+            return memberService.getFavoriteList(input);
+        } catch (Exception io) {
+            return memberService.responseError(io.toString());
+        }
+    }
+
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    @PostMapping("/member/addFavoriteListName")
     public JSONObject addFavoriteListName(@Valid @RequestBody FavoriteListNameParam input) {
         try {
             return memberService.addFavoriteListName(input);
@@ -80,8 +90,8 @@ public class MemberController {
         }
     }
 
-    @PostMapping("/member/deleteFavoriteListName")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
+    @PostMapping("/member/deleteFavoriteListName")
     public JSONObject deleteFavoriteListName(@Valid @RequestBody FavoriteListNameParam input) {
         try {
             return memberService.deleteFavoriteListName(input);
@@ -90,8 +100,8 @@ public class MemberController {
         }
     }
 
-    @PostMapping("/member/addFavoriteListStock")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
+    @PostMapping("/member/addFavoriteListStock")
     public JSONObject addFavoriteListStock(@Valid @RequestBody FavoriteListDetailParam input) {
         try {
             return memberService.addFavoriteListStock(input);
@@ -100,8 +110,8 @@ public class MemberController {
         }
     }
 
-    @PostMapping("/member/deleteFavoriteListStock")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
+    @PostMapping("/member/deleteFavoriteListStock")
     public JSONObject deleteFavoriteListStock(@Valid @RequestBody FavoriteListStockDeleteParam input) {
         try {
             return memberService.deleteFavoriteListStock(input);
@@ -110,8 +120,8 @@ public class MemberController {
         }
     }
 
-    @PostMapping("/member/updateFavoriteListStockComment")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
+    @PostMapping("/member/updateFavoriteListStockComment")
     public JSONObject updateFavoriteListStockComment(@Valid @RequestBody FavoriteListStockCommentParam input) {
         try {
             return memberService.updateFavoriteListStockComment(input);

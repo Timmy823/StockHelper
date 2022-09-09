@@ -31,6 +31,7 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.stereotype.Service;
 
 import lombok.Data;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 @Data
@@ -152,6 +153,47 @@ public class MemberService {
         } catch (MailException e) {
             return responseError(e.getMessage());
         }
+    }
+
+    public JSONObject getFavoriteList(JSONObject data) {
+        String member_account = data.getString("member_account");
+        MemberModel member = new MemberModel();
+        ArrayList<FavoriteListNameModel> list_names = new ArrayList<FavoriteListNameModel>();
+        ArrayList<FavoriteListDetailModel> list_details = new ArrayList<FavoriteListDetailModel>();
+        JSONArray response_data = new JSONArray();
+
+        // Check member exists, and get mid.
+        if ((member = MemberRepo.FindByAccount(member_account)) == null) {
+            return responseError("會員帳號尚未建立");
+        }
+
+        list_names = ListNameRepo.FindListByMemberId(member.getMid());
+        for (FavoriteListNameModel sub_list : list_names) {
+            // list 無效跳過不回傳
+            if (!sub_list.getStatus().equals("0"))
+                continue;
+
+            JSONObject response_item = new JSONObject();
+            JSONArray item_array = new JSONArray();
+            response_item.put("list_name", sub_list.getFavorite_list_name());
+            list_details = ListDetailRepo.FindDetailByListNameId(sub_list.getList_name_id());
+
+            for (FavoriteListDetailModel detail : list_details) {
+                // stock id 無效跳過不回傳
+                if (!detail.getStatus().equals("0"))
+                    continue;
+
+                JSONObject item_detail = new JSONObject();
+                item_detail.put("stock_id", detail.getStock_id());
+                item_detail.put("stock_name", detail.getStock_name());
+                item_detail.put("comment", detail.getComment());
+                item_array.add(item_detail);
+            }
+            response_item.put("stock_list", item_array);
+            response_data.add(response_item);
+        }
+
+        return responseJSONArraySuccess(response_data);
     }
 
     public JSONObject addFavoriteListName(FavoriteListNameParam data) {
@@ -353,7 +395,6 @@ public class MemberService {
         properties.put("mail.smtp.starttls.enable", "true");
         properties.put("mail.smtp.starttls.required", "true");
         javaMailSender.setJavaMailProperties(properties);
-        ;
         return javaMailSender;
     }
 
@@ -391,6 +432,18 @@ public class MemberService {
         result.put("metadata", status_code);
         result.put("data", data);
 
+        return result;
+    }
+
+    private JSONObject responseJSONArraySuccess(JSONArray data) {
+        JSONObject status_code = new JSONObject();
+        JSONObject result = new JSONObject();
+
+        status_code.put("status", "success");
+        status_code.put("desc", "");
+
+        result.put("metadata", status_code);
+        result.put("data", data);
         return result;
     }
 

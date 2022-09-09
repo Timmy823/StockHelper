@@ -29,48 +29,49 @@ public class TWSEController {
 
     @GetMapping("/twse/getAllCompanyList")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject getCompanyList(TWSEService twse,
+    public JSONObject getCompanyList(TWSEService company,
             @RequestParam("type")
             @SpecificValidator(intValues = {1,2}, message = "type just can be 1 or 2. 1 is listed company. 2 is OTC company.")
             Integer type) {
         String twseUrl = "https://isin.twse.com.tw/isin/C_public.jsp?strMode=" + String.valueOf(type * 2);
 
         try {
-            twse = new TWSEService(twseUrl, stringRedisTemplate);
-            return twse.getCompanyList(type);
+            company = new TWSEService(twseUrl, stringRedisTemplate);
+            return company.getCompanyList(type);
         } catch (IOException e) {
             e.printStackTrace();
-            return twse.responseError(e.toString());
+            return company.responseError(e.toString());
         }
     }
 
     @GetMapping("/twse/getCompanyProfile")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject getCompanyInfoProfile(TWSEService stock, 
+    public JSONObject getCompanyInfoProfile(TWSEService company, 
             @RequestParam("stock_id")
             @NotEmpty(message = "it can not be empty.")
             String stock_id) {
         String stockUrl = "https://tw.stock.yahoo.com/quote/" + stock_id + "/profile";
         try {
-            stock = new TWSEService(stockUrl, stringRedisTemplate);
-            return stock.getCompanyInfoProfile();
+            company = new TWSEService(stockUrl, stringRedisTemplate);
+            return company.getCompanyInfoProfile();
         } catch (IOException e) {
-            return stock.responseError(e.toString());
+            return company.responseError(e.toString());
         }
     }
 
     @GetMapping("/twse/getCompanyDividendPolicy")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject getCompanyDividendPolicy(@RequestParam JSONObject input, TWSEService twse) {
-        String id = input.getString("id");
-        String stockUrl = "https://tw.stock.yahoo.com/quote/" + id + "/dividend";
-
+    public JSONObject getCompanyDividendPolicy(TWSEService company, 
+            @RequestParam("stock_id")
+            @NotEmpty(message = "it can not be empty.")
+            String stock_id){
+        String stockUrl = "https://tw.stock.yahoo.com/quote/" + stock_id + "/dividend";
         try {
-            twse = new TWSEService(stockUrl, stringRedisTemplate);
-            return twse.getCompanyDividendPolicy();
+            company = new TWSEService(stockUrl, stringRedisTemplate);
+            return company.getCompanyDividendPolicy();
         } catch (IOException io) {
             io.printStackTrace();
-            return twse.responseError(io.toString());
+            return company.responseError(io.toString());
         }
     }
 

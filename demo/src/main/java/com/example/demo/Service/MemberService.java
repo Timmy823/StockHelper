@@ -58,10 +58,6 @@ public class MemberService {
         }
         
         list_names = ListNameRepo.FindAllListByMember(member.getMid());
-        if(list_names.size() == 0) {
-            return responseJSONArraySuccess(new JSONArray());
-        }
-
         for(FavoriteListNameModel sub_list : list_names) {
             //list 無效跳過不回傳
             if(!sub_list.getStatus().equals("0")) 

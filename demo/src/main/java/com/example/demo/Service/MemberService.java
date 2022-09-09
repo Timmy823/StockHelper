@@ -262,9 +262,10 @@ public class MemberService {
         result_datail.setStock_id(data.getStock_id());
         result_datail.setStock_name(data.getStock_name());
         result_datail.setStatus("0");
-
+        result_datail.setComment("");
         result_datail.setCreate_user("system");
         result_datail.setUpdate_user("system");
+
         ListDetailRepo.save(result_datail);
 
         return responseSuccess();
@@ -326,13 +327,14 @@ public class MemberService {
                 continue;
 
             if (stock_list.get(0).getComment().equals(data.getStock_comment())) {
-                return responseError("comment相同，無異動");
+                return responseSuccess();
             }
             // update stock comments.
             stock_list.get(0).setComment(data.getStock_comment());
             ;
             ListDetailRepo.save(stock_list.get(0));
         }
+
         return responseSuccess();
     }
 

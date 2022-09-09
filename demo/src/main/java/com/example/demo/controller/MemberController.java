@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.example.demo.Component.MemberRegisterParam;
 import com.example.demo.Component.MemberComponent.FavoriteListNameParam;
+import com.example.demo.Component.MemberComponent.FavoriteListStockCommentParam;
 import com.example.demo.Component.GetMemberInfoParam;
 
 import com.example.demo.Service.MemberService;
@@ -19,6 +20,16 @@ import com.example.demo.Service.MemberService;
 public class MemberController {
     @Autowired
     MemberService memberService;
+
+    @PostMapping("/member/updateFavoriteListStockComment")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject deleteFavoriteListDetail(@Valid @RequestBody FavoriteListStockCommentParam input) {
+        try {
+            return memberService.updateFavoriteListStockComment(input);
+        } catch (Exception io) {
+            return memberService.responseError(io.toString());
+        }
+    }
 
     @PostMapping("/member/addFavoriteListName")
     @CrossOrigin(origins = "*", allowedHeaders = "*")

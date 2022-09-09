@@ -7,13 +7,16 @@ import net.sf.json.JSONObject;
 
 import com.example.demo.Component.MemberRegisterParam;
 import com.example.demo.Component.MemberComponent.FavoriteListNameParam;
+import com.example.demo.Component.MemberComponent.FavoriteListStockCommentParam;
 import com.example.demo.Component.GetMemberInfoParam;
 
 import com.example.demo.Entity.MemberModel;
+import com.example.demo.Entity.FavoriteListDetailModel;
 import com.example.demo.Entity.FavoriteListNameModel;
 import com.example.demo.Entity.LoginLogModel;
 
 import com.example.demo.Repository.MemberRespository;
+import com.example.demo.Repository.FavoriteListDetailRespository;
 import com.example.demo.Repository.FavoriteListNameRespository;
 import com.example.demo.Repository.LoginLogRespository;
 
@@ -38,8 +41,38 @@ public class MemberService {
     private LoginLogRespository LoginLogRepo;
     @Autowired
     private FavoriteListNameRespository ListNameRepo;
+    @Autowired
+    private FavoriteListDetailRespository ListDetailRepo;
 
     public MemberService() {
+    }
+
+    public JSONObject updateFavoriteListStockComment(FavoriteListStockCommentParam data) {
+        MemberModel member = new MemberModel();
+        ArrayList<FavoriteListNameModel> exist_lists = new ArrayList<FavoriteListNameModel>();
+        ArrayList<FavoriteListDetailModel> stock_list = new ArrayList<FavoriteListDetailModel>();
+
+        //check member account exists.
+        if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
+            return responseError("查無會員帳號");
+        }
+        //check list is exists and get each list_name_id.
+        exist_lists = ListNameRepo.FindListByMemberId(member.getMid());
+
+        //traverse all exists lists name, and get stock list info to update stock comment
+        for(FavoriteListNameModel list_item : exist_lists) {
+            stock_list = ListDetailRepo.FindStockByListNameIdAndStockId(list_item.getList_name_id(), data.getStock_id());
+            if(stock_list.size() == 0) 
+                continue;
+
+            if (stock_list.get(0).getComment().equals(data.getStock_comment())) {
+                return responseError("comment相同，無異動");
+            }
+            //update stock comments.
+            stock_list.get(0).setComment(data.getStock_comment());;
+            ListDetailRepo.save(stock_list.get(0));
+        }
+        return responseSuccess();
     }
 
     public JSONObject addFavoriteListName(FavoriteListNameParam data) {
@@ -51,7 +84,7 @@ public class MemberService {
             return responseError("查無會員帳號");
         }
 
-        exist_list = ListNameRepo.FindMemberByListName(member.getMid(), data.getList_name());
+        exist_list = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
         if (exist_list.size() > 1) {
             return responseError("list_name: \"" + data.getList_name() + "\" 重複" + exist_list.size() + "筆");
         }

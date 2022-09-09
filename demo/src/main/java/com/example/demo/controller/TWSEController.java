@@ -1,26 +1,33 @@
 package com.example.demo.controller;
-
-import com.example.demo.Service.TWSEService;
-
-import net.sf.json.JSONObject;
-
 import java.io.IOException;
 
+import javax.validation.Valid;
+
+import com.example.demo.Component.StockComponent.StockIdParam;
+import com.example.demo.Service.TWSEService;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import net.sf.json.JSONObject;
+
 @RestController
 public class TWSEController {
-    //company monthly revenue for recent five years
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
     @GetMapping("/twse/getCompanyMonthlyRevenue")
-    public JSONObject getCompanyMonthlyRevenue(@RequestBody JSONObject input, TWSEService twse){
-        String id =input.getString("id");
-        String stockUrl= "https://tw.stock.yahoo.com/quote/"+id+"/revenue";
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject getCompanyMonthlyRevenue(@Valid @RequestBody StockIdParam input, TWSEService twse){
+        String stockUrl= "https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.revenues;period=month;symbol="+ input.getStock_id();
         
         try{
-            twse= new TWSEService(stockUrl);
-            return twse.getCompanyMonthlyRevenue();
+            twse = new TWSEService(stockUrl, stringRedisTemplate);
+            return twse.getCompanyMonthlyRevenue(input);
         }catch(IOException io){
             io.printStackTrace();
             return twse.responseError(io.toString());

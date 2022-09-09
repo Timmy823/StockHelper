@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.web.bind.annotation.*;
 
 import com.example.demo.Component.MemberRegisterParam;
+import com.example.demo.Component.MemberComponent.UpdateFavoriteListNameParam;
 import com.example.demo.Component.GetMemberInfoParam;
 
 import com.example.demo.Service.MemberService;
@@ -18,6 +19,16 @@ import com.example.demo.Service.MemberService;
 public class MemberController {
     @Autowired
     MemberService memberService;
+
+    @PostMapping("/member/updateFavoriteListName")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject updateFavoriteListName(@Valid @RequestBody UpdateFavoriteListNameParam input) {
+        try{
+            return memberService.updateFavoriteListName(input);
+        }catch(Exception io){
+            return memberService.responseError(io.toString());
+        }
+    }
 
     @PostMapping("/member/createMember")
     @CrossOrigin(origins = "*", allowedHeaders = "*")

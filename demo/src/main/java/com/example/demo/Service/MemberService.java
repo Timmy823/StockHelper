@@ -12,6 +12,7 @@ import com.example.demo.Component.MemberComponent.FavoriteListDetailParam;
 import com.example.demo.Component.MemberComponent.FavoriteListNameParam;
 import com.example.demo.Component.MemberComponent.FavoriteListStockCommentParam;
 import com.example.demo.Component.MemberComponent.FavoriteListStockDeleteParam;
+import com.example.demo.Component.MemberComponent.UpdateFavoriteListNameParam;
 import com.example.demo.Entity.FavoriteListDetailModel;
 import com.example.demo.Entity.FavoriteListNameModel;
 import com.example.demo.Entity.LoginLogModel;
@@ -50,6 +51,73 @@ public class MemberService {
 
     public MemberService(StringRedisTemplate stringRedisTemplate) {
         this.stringRedisTemplate = stringRedisTemplate;
+    }
+
+    public JSONObject updateFavoriteListName(UpdateFavoriteListNameParam data) {
+        MemberModel member = new MemberModel();
+        ArrayList<FavoriteListNameModel> list_names = new ArrayList<FavoriteListNameModel>();
+        ArrayList<FavoriteListNameModel> new_list_names = new ArrayList<FavoriteListNameModel>();
+        ArrayList<FavoriteListDetailModel> list_stocks = new ArrayList<FavoriteListDetailModel>();
+        ArrayList<FavoriteListDetailModel> new_list_stocks = new ArrayList<FavoriteListDetailModel>();
+
+        // Check member exists, and get member_id.
+        if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
+            return responseError("會員帳號尚未建立");
+        }
+
+        // get old list name info.
+        list_names = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
+        if (list_names.size() == 0 || !list_names.get(0).getStatus().equals("0")) {
+            return responseError("會員帳號名下查無清單 \"" + data.getList_name() + "\"");
+        }
+
+        new_list_names = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getNew_list_name());
+        // new list name is not exist, old list name update to new name.
+        if (new_list_names.size() == 0) {
+            list_names.get(0).setFavorite_list_name(data.getNew_list_name());
+            ListNameRepo.save(list_names.get(0));
+            return responseSuccess();
+        }
+
+        if (new_list_names.get(0).getStatus().equals("0"))
+            return responseError("會員帳號已創建同清單 \"" + data.getNew_list_name() + "\"");
+
+        // if new list is invalid and old list exists, new list update to valid and old
+        // list valid stock info insert into new stock info.
+        list_stocks = ListDetailRepo.FindDetailByListNameId(list_names.get(0).getList_name_id());
+        for (FavoriteListDetailModel stock_item : list_stocks) {
+            // if new list stock exists, update to valid. Otherwise, old list stock info
+            // insert into new list stock.
+            if (stock_item.getStatus().equals("0")) {
+                new_list_stocks = ListDetailRepo.FindListStockInfoByListNameIdAndStock(
+                        new_list_names.get(0).getList_name_id(),
+                        stock_item.getStock_id());
+                if (new_list_stocks.size() == 0) {
+                    FavoriteListDetailModel new_stock_item = new FavoriteListDetailModel();
+                    new_stock_item.setList_name_id(new_list_names.get(0).getList_name_id());
+                    new_stock_item.setStock_id(stock_item.getStock_id());
+                    new_stock_item.setStock_name(stock_item.getStock_name());
+                    new_stock_item.setComment(stock_item.getComment());
+                    new_stock_item.setStatus("0");
+                    new_stock_item.setCreate_user("system");
+                    new_stock_item.setUpdate_user("system");
+                    ListDetailRepo.save(new_stock_item);
+                } else {
+                    new_list_stocks.get(0).setStatus("0");
+                    ListDetailRepo.save(new_list_stocks.get(0));
+                }
+                // update old stock list status to invalid.
+                stock_item.setStatus("1");
+                ListDetailRepo.save(stock_item);
+            }
+        }
+        // old list update to invalid, and new list update to valid.
+        list_names.get(0).setStatus("1");
+        ListNameRepo.save(list_names.get(0));
+
+        new_list_names.get(0).setStatus("0");
+        ListNameRepo.save(new_list_names.get(0));
+        return responseSuccess();
     }
 
     public JSONObject createMember(MemberRegisterParam data) {

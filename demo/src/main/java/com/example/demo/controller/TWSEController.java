@@ -2,13 +2,9 @@ package com.example.demo.Controller;
 
 import java.io.IOException;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
+import javax.validation.constraints.*;
 
 import com.example.demo.Component.SpecificValidator;
-import com.example.demo.Component.StockTradeInfoParam;
 import com.example.demo.Service.TWSEService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -77,29 +73,38 @@ public class TWSEController {
 
     @GetMapping("/twse/getStockTradeInfo")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject getStockTradeInfo(@Valid @RequestParam StockTradeInfoParam input, TWSEService twse) {
-        Integer specific_date = input.get_date();
-        String input_type = input.get_type();
-        String input_id = input.get_stockID();
+    public JSONObject getStockTradeInfo(TWSEService stock, 
+            @RequestParam("stock_id")
+            @NotEmpty(message = "it can not be empty.")
+            String stock_id,
+            
+            @RequestParam("type")
+            @NotEmpty(message = "it can not be empty.")
+            @SpecificValidator(strValues={"1","2","3"}, message="type必須為指定\"1\"或\"2\"或\"3\"")
+            String type,
+
+            @RequestParam("specific_date")
+            @Pattern(regexp = "^(((?:19|20)[0-9]{2})(0?[1-9]|1[012])(0?[1-9]|[12][0-9]|3[01]))$" , message = "格式錯誤")
+            String specific_date) {
+
         String stockUrl = "";
-
-        if (input_type.equals("1"))
+        if (type.equals("1"))
             stockUrl = "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=html&date=" + specific_date
-                    + "&stockNo=" + input_id;
+                    + "&stockNo=" + stock_id;
 
-        if (input_type.equals("2"))
+        if (type.equals("2"))
             stockUrl = "https://www.twse.com.tw/exchangeReport/FMSRFK?response=html&date=" + specific_date + "&stockNo="
-                    + input_id;
+                    + stock_id;
 
-        if (input_type.equals("3"))
-            stockUrl = "https://www.twse.com.tw/exchangeReport/FMNPTK?response=html&stockNo=" + input_id;
+        if (type.equals("3"))
+            stockUrl = "https://www.twse.com.tw/exchangeReport/FMNPTK?response=html&stockNo=" + stock_id;
 
         try {
-            twse = new TWSEService(stockUrl, stringRedisTemplate);
-            return twse.getStockTradeInfo(input_type, specific_date);
+            stock = new TWSEService(stockUrl, stringRedisTemplate);
+            return stock.getStockTradeInfo(type, Integer.parseInt(specific_date));
         } catch (IOException io) {
             io.printStackTrace();
-            return twse.responseError(io.toString());
+            return stock.responseError(io.toString());
         }
     }
 }

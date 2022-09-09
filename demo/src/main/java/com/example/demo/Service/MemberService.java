@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 import com.example.demo.Component.GetMemberInfoParam;
 import com.example.demo.Component.MemberRegisterParam;
 import com.example.demo.Component.MemberUpdateParam;
+import com.example.demo.Component.MemberComponent.FavoriteListStockDeleteParam;
 import com.example.demo.Component.MemberComponent.FavoriteListDetailParam;
 import com.example.demo.Component.MemberComponent.FavoriteListNameParam;
 import com.example.demo.Entity.FavoriteListDetailModel;
@@ -137,6 +138,41 @@ public class MemberService {
             member.setIsValid("00");
         member.setUpdate_user("system");
         MemberRepo.save(member);
+
+        return responseSuccess();
+    }
+
+    public JSONObject deleteFavoriteListStock(FavoriteListStockDeleteParam data) {
+        MemberModel member = new MemberModel();
+        ArrayList<FavoriteListNameModel> exist_list = new ArrayList<FavoriteListNameModel>();
+        ArrayList<FavoriteListDetailModel> stock_list = new ArrayList<FavoriteListDetailModel>();
+
+        // check member account exists.
+        if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
+            return responseError("查無會員帳號");
+        }
+        // check list is exists and get list_name_id.
+        exist_list = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
+        if (exist_list.size() == 0) {
+            return responseError("list_name: \"" + data.getList_name() + "\" 尚未創建");
+        }
+        if (exist_list.size() > 1) {
+            return responseError("list_name資料異常，重複共" + exist_list.size());
+        }
+
+        // get stock_list info
+        stock_list = ListDetailRepo.FindListStockInfoByListNameIdAndStock(exist_list.get(0).getList_name_id(),
+                data.getStock_id());
+        if (stock_list.size() > 1) {
+            return responseError("stock_id資料異常，重複共" + stock_list.size() + "筆");
+        }
+        if (stock_list.size() == 0 || !stock_list.get(0).getStatus().equals("0")) {
+            return responseError("list中查無此stock_id");
+        }
+
+        // update valid stock_list into invalid.
+        stock_list.get(0).setStatus("1");
+        ListDetailRepo.save(stock_list.get(0));
 
         return responseSuccess();
     }

@@ -7,6 +7,7 @@ import com.example.demo.Component.MemberRegisterParam;
 import com.example.demo.Component.MemberUpdateParam;
 import com.example.demo.Component.MemberComponent.FavoriteListDetailParam;
 import com.example.demo.Component.MemberComponent.FavoriteListNameParam;
+import com.example.demo.Component.MemberComponent.FavoriteListStockDeleteParam;
 import com.example.demo.Service.MemberService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +34,16 @@ public class MemberController {
     public JSONObject deleteFavoriteListName(@Valid @RequestBody FavoriteListNameParam input) {
         try {
             return memberService.deleteFavoriteListName(input);
+        } catch (Exception io) {
+            return memberService.responseError(io.toString());
+        }
+    }
+
+    @PostMapping("/member/deleteFavoriteListStock")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject deleteFavoriteListStock(@Valid @RequestBody FavoriteListStockDeleteParam input) {
+        try {
+            return memberService.deleteFavoriteListStock(input);
         } catch (Exception io) {
             return memberService.responseError(io.toString());
         }

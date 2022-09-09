@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 import com.example.demo.Component.GetMemberInfoParam;
 import com.example.demo.Component.MemberRegisterParam;
 import com.example.demo.Component.MemberUpdateParam;
+import com.example.demo.Component.MemberComponent.FavoriteListDetailParam;
 import com.example.demo.Component.MemberComponent.FavoriteListNameParam;
 import com.example.demo.Entity.FavoriteListDetailModel;
 import com.example.demo.Entity.FavoriteListNameModel;
@@ -46,6 +47,56 @@ public class MemberService {
 
     public MemberService(StringRedisTemplate stringRedisTemplate) {
         this.stringRedisTemplate = stringRedisTemplate;
+    }
+
+    public JSONObject addFavoriteListDetail(FavoriteListDetailParam data) {
+        MemberModel member = new MemberModel();
+        ArrayList<FavoriteListNameModel> list_name = new ArrayList<FavoriteListNameModel>();
+        ArrayList<FavoriteListDetailModel> list_datail = new ArrayList<FavoriteListDetailModel>();
+        FavoriteListDetailModel result_datail = new FavoriteListDetailModel();
+
+        // 檢核會員帳號是否存在
+        if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
+            return responseError("查無會員帳號");
+        }
+
+        list_name = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
+        if (list_name.size() == 0) {
+            return responseError("查無list_name: \"" + data.getList_name() + "\"無法新增");
+        }
+        if (list_name.size() > 1) {
+            return responseError("favorite list name資料異常，重複共" + list_name.size() + "筆");
+        }
+
+        list_datail = ListDetailRepo.FindListStockInfoByListNameIdAndStock(list_name.get(0).getList_name_id(),
+                data.getStock_id());
+        if (list_datail.size() > 1) {
+            return responseError("stock id資料異常，重複共" + list_datail.size() + "筆");
+        }
+        if (list_datail.size() != 0) {
+            if (list_datail.get(0).getStatus().equals("0")) {
+                return responseError("資料已創建");
+            }
+            // list is exist and status invalid, update list status to valid.
+            if (!list_name.get(0).getStatus().equals("0")) {
+                list_name.get(0).setStatus("0");
+                ListNameRepo.save(list_name.get(0));
+            }
+            list_datail.get(0).setStatus("0");
+            ListDetailRepo.save(list_datail.get(0));
+            return responseSuccess();
+        }
+
+        result_datail.setList_name_id(list_name.get(0).getList_name_id());
+        result_datail.setStock_id(data.getStock_id());
+        result_datail.setStock_name(data.getStock_name());
+        result_datail.setStatus("0");
+
+        result_datail.setCreate_user("system");
+        result_datail.setUpdate_user("system");
+        ListDetailRepo.save(result_datail);
+
+        return responseSuccess();
     }
 
     public JSONObject createMember(MemberRegisterParam data) {
@@ -87,7 +138,7 @@ public class MemberService {
         member.setUpdate_user("system");
         MemberRepo.save(member);
 
-        return responseUpdateMemberSuccess();
+        return responseSuccess();
     }
 
     public JSONObject addFavoriteListName(FavoriteListNameParam data) {
@@ -99,7 +150,7 @@ public class MemberService {
             return responseError("查無會員帳號");
         }
 
-        exist_list = ListNameRepo.FindListByMemberAndListNamee(member.getMid(), data.getList_name());
+        exist_list = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
         if (exist_list.size() > 1) {
             return responseError("list_name: \"" + data.getList_name() + "\" 重複" + exist_list.size() + "筆");
         }
@@ -136,7 +187,7 @@ public class MemberService {
         }
 
         // check list is exists and valid.
-        exist_list = ListNameRepo.FindListByMemberAndListNamee(member.getMid(), data.getList_name());
+        exist_list = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
         if (exist_list.size() == 0 || !exist_list.get(0).getStatus().equals("0"))
             return responseError("list_name: \"" + data.getList_name() + "\" 尚未創建");
 
@@ -270,19 +321,6 @@ public class MemberService {
         result.put("metadata", status_code);
         result.put("data", data);
 
-        return result;
-    }
-
-    private JSONObject responseUpdateMemberSuccess() {
-        JSONObject data = new JSONObject();
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-
-        status_code.put("status", "success");
-        status_code.put("desc", "");
-
-        result.put("metadata", status_code);
-        result.put("data", data);
         return result;
     }
 

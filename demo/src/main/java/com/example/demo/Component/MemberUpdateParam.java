@@ -10,10 +10,9 @@ public class MemberUpdateParam {
     @NotEmpty(message = "member_account不可為空")
     private String account;
 
-    @SpecificValidator(objectKeys = {}, 
-    message = "update_data參數錯誤: \"password\":9~16碼長、\"member_name\":50長以內、\"telephone\":09開頭+8長、\"verifiaction\":已認證為\"Y\"")
+    @SpecificValidator(objectKeys = {}, message = "update_data參數錯誤: \"password\":9~16碼長、\"member_name\":50長以內、\"telephone\":09開頭+8長、\"verifiaction\":已認證為\"Y\"")
     private JSONObject update_data;
-    
+
     private String password;
     private String name;
     private String telephone;

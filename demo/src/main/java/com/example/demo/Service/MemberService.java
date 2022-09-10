@@ -223,8 +223,7 @@ public class MemberService {
         }
     }
 
-    public JSONObject getFavoriteList(JSONObject data) {
-        String member_account = data.getString("member_account");
+    public JSONObject getFavoriteList(String member_account) {
         MemberModel member = new MemberModel();
         ArrayList<FavoriteListNameModel> list_names = new ArrayList<FavoriteListNameModel>();
         ArrayList<FavoriteListDetailModel> list_details = new ArrayList<FavoriteListDetailModel>();

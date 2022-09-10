@@ -2,93 +2,109 @@ package com.example.demo.Controller;
 
 import java.io.IOException;
 
-import javax.validation.Valid;
+import javax.validation.constraints.*;
 
-import com.example.demo.Component.StockTradeInfoParam;
+import com.example.demo.Component.SpecificValidator;
 import com.example.demo.Service.TWSEService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import net.sf.json.JSONObject;
 
 @RestController
+@Validated
 public class TWSEController {
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
 
     @GetMapping("/twse/getAllCompanyList")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject getCompanyList(@RequestBody JSONObject input, TWSEService twse) {
-        int list_level = input.getInt("type");
-        String twseUrl = "https://isin.twse.com.tw/isin/C_public.jsp?strMode=" + String.valueOf(list_level * 2);
+    public JSONObject getCompanyList(TWSEService company,
+            @RequestParam("type")
+            @SpecificValidator(intValues = {1,2}, message = "type just can be 1 or 2. 1 is listed company. 2 is OTC company.")
+            Integer type) {
+        String twseUrl = "https://isin.twse.com.tw/isin/C_public.jsp?strMode=" + String.valueOf(type * 2);
 
         try {
-            twse = new TWSEService(twseUrl, stringRedisTemplate);
+            company = new TWSEService(twseUrl, stringRedisTemplate);
+            return company.getCompanyList(type);
         } catch (IOException e) {
             e.printStackTrace();
+            return company.responseError(e.toString());
         }
-
-        return twse.getCompanyList(list_level);
     }
 
     @GetMapping("/twse/getCompanyProfile")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject getCompanyInfoProfile(@RequestBody JSONObject input, TWSEService stock) {
-        Integer stockid = input.getInt("id");
-        String stockUrl = "https://tw.stock.yahoo.com/quote/" + stockid + "/profile";
+    public JSONObject getCompanyInfoProfile(TWSEService company, 
+            @RequestParam("stock_id")
+            @NotEmpty(message = "it can not be empty.")
+            String stock_id) {
+        String stockUrl = "https://tw.stock.yahoo.com/quote/" + stock_id + "/profile";
         try {
-            stock = new TWSEService(stockUrl, stringRedisTemplate);
-            return stock.getCompanyInfoProfile();
+            company = new TWSEService(stockUrl, stringRedisTemplate);
+            return company.getCompanyInfoProfile();
         } catch (IOException e) {
-            return stock.responseError(e.toString());
+            return company.responseError(e.toString());
         }
     }
 
     @GetMapping("/twse/getCompanyDividendPolicy")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject getCompanyDividendPolicy(@RequestBody JSONObject input, TWSEService twse) {
-        String id = input.getString("id");
-        String stockUrl = "https://tw.stock.yahoo.com/quote/" + id + "/dividend";
-
+    public JSONObject getCompanyDividendPolicy(TWSEService company, 
+            @RequestParam("stock_id")
+            @NotEmpty(message = "it can not be empty.")
+            String stock_id){
+        String stockUrl = "https://tw.stock.yahoo.com/quote/" + stock_id + "/dividend";
         try {
-            twse = new TWSEService(stockUrl, stringRedisTemplate);
-            return twse.getCompanyDividendPolicy();
+            company = new TWSEService(stockUrl, stringRedisTemplate);
+            return company.getCompanyDividendPolicy();
         } catch (IOException io) {
             io.printStackTrace();
-            return twse.responseError(io.toString());
+            return company.responseError(io.toString());
         }
     }
 
     @GetMapping("/twse/getStockTradeInfo")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject getStockTradeInfo(@Valid @RequestBody StockTradeInfoParam input, TWSEService twse) {
-        Integer specific_date = input.get_date();
-        String input_type = input.get_type();
-        String input_id = input.get_stockID();
+    public JSONObject getStockTradeInfo(TWSEService stock, 
+            @RequestParam("stock_id")
+            @NotEmpty(message = "it can not be empty.")
+            String stock_id,
+            
+            @RequestParam("type")
+            @NotEmpty(message = "it can not be empty.")
+            @SpecificValidator(strValues={"1","2","3"}, message="type必須為指定\"1\"或\"2\"或\"3\"")
+            String type,
+
+            @RequestParam("specific_date")
+            @Pattern(regexp = "^(((?:19|20)[0-9]{2})(0?[1-9]|1[012])(0?[1-9]|[12][0-9]|3[01]))$" , message = "格式錯誤")
+            String specific_date) {
+
         String stockUrl = "";
-
-        if (input_type.equals("1"))
+        if (type.equals("1"))
             stockUrl = "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=html&date=" + specific_date
-                    + "&stockNo=" + input_id;
+                    + "&stockNo=" + stock_id;
 
-        if (input_type.equals("2"))
+        if (type.equals("2"))
             stockUrl = "https://www.twse.com.tw/exchangeReport/FMSRFK?response=html&date=" + specific_date + "&stockNo="
-                    + input_id;
+                    + stock_id;
 
-        if (input_type.equals("3"))
-            stockUrl = "https://www.twse.com.tw/exchangeReport/FMNPTK?response=html&stockNo=" + input_id;
+        if (type.equals("3"))
+            stockUrl = "https://www.twse.com.tw/exchangeReport/FMNPTK?response=html&stockNo=" + stock_id;
 
         try {
-            twse = new TWSEService(stockUrl, stringRedisTemplate);
-            return twse.getStockTradeInfo(input_type, specific_date);
+            stock = new TWSEService(stockUrl, stringRedisTemplate);
+            return stock.getStockTradeInfo(type, Integer.parseInt(specific_date));
         } catch (IOException io) {
             io.printStackTrace();
-            return twse.responseError(io.toString());
+            return stock.responseError(io.toString());
         }
     }
 }

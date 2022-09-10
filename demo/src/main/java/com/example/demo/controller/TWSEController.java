@@ -37,7 +37,7 @@ public class TWSEController {
             return company.getCompanyList(type);
         } catch (IOException e) {
             e.printStackTrace();
-            return ResponseService.responseError(e.toString());
+            return ResponseService.responseError("error", e.toString());
         }
     }
 
@@ -52,7 +52,7 @@ public class TWSEController {
             company = new TWSEService(stockUrl, stringRedisTemplate);
             return company.getCompanyInfoProfile();
         } catch (IOException e) {
-            return ResponseService.responseError(e.toString());
+            return ResponseService.responseError("error", e.toString());
         }
     }
 
@@ -68,7 +68,7 @@ public class TWSEController {
             return company.getCompanyDividendPolicy();
         } catch (IOException io) {
             io.printStackTrace();
-            return ResponseService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -105,7 +105,7 @@ public class TWSEController {
             return stock.getStockTradeInfo(type, Integer.parseInt(specific_date));
         } catch (IOException io) {
             io.printStackTrace();
-            return ResponseService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 }

@@ -62,13 +62,13 @@ public class MemberService {
 
         // Check member exists, and get member_id.
         if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
-            return ResponseService.responseError("會員帳號尚未建立");
+            return ResponseService.responseError("error", "會員帳號尚未建立");
         }
 
         // get old list name info.
         list_names = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
         if (list_names.size() == 0 || !list_names.get(0).getStatus().equals("0")) {
-            return ResponseService.responseError("會員帳號名下查無清單 \"" + data.getList_name() + "\"");
+            return ResponseService.responseError("error", "會員帳號名下查無清單 \"" + data.getList_name() + "\"");
         }
 
         new_list_names = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getNew_list_name());
@@ -80,7 +80,7 @@ public class MemberService {
         }
 
         if (new_list_names.get(0).getStatus().equals("0"))
-            return ResponseService.responseError("會員帳號已創建同清單 \"" + data.getNew_list_name() + "\"");
+            return ResponseService.responseError("error", "會員帳號已創建同清單 \"" + data.getNew_list_name() + "\"");
 
         // if new list is invalid and old list exists, new list update to valid and old
         // list valid stock info insert into new stock info.
@@ -123,7 +123,7 @@ public class MemberService {
     public JSONObject createMember(MemberRegisterParam data) {
         // 檢核會員帳號是否存在
         if ((MemberRepo.FindByAccount(data.getAccount())) != null) {
-            return ResponseService.responseError("會員帳號已創建");
+            return ResponseService.responseError("error", "會員帳號已創建");
         }
 
         // add member data
@@ -144,7 +144,7 @@ public class MemberService {
         // 檢核會員帳號是否存在
         MemberModel member = MemberRepo.FindByAccount(data.getAccount());
         if (member == null) {
-            return ResponseService.responseError("會員帳號或密碼錯誤");
+            return ResponseService.responseError("error", "會員帳號或密碼錯誤");
         }
 
         // if input field not null ,and update member field
@@ -168,7 +168,7 @@ public class MemberService {
         // 檢核會員帳號是否存在
         MemberModel member = MemberRepo.FindByAccountAndPassword(data.getAccount(), data.getPassword());
         if (member == null) {
-            return ResponseService.responseError("會員帳號或密碼錯誤");
+            return ResponseService.responseError("error", "會員帳號或密碼錯誤");
         }
 
         String get_member_info_redis_key = "member_info:" + data.getAccount();
@@ -205,7 +205,7 @@ public class MemberService {
             String customer_email = data.getString("member_account");
             // 檢核會員帳號是否存在
             if (MemberRepo.existByAccount(customer_email) == 0)
-                return ResponseService.responseError("查無此會員帳號");
+                return ResponseService.responseError("error", "查無此會員帳號");
 
             // create random 6 numbers and letters
             String salt_number = getSaltString(6);
@@ -222,7 +222,7 @@ public class MemberService {
             salt.put("certification_code", salt_number);
             return ResponseService.responseSuccess(salt);
         } catch (MailException e) {
-            return ResponseService.responseError(e.getMessage());
+            return ResponseService.responseError("error", e.getMessage());
         }
     }
 
@@ -234,7 +234,7 @@ public class MemberService {
 
         // Check member exists, and get mid.
         if ((member = MemberRepo.FindByAccount(member_account)) == null) {
-            return ResponseService.responseError("會員帳號尚未建立");
+            return ResponseService.responseError("error", "會員帳號尚未建立");
         }
 
         list_names = ListNameRepo.FindListByMemberId(member.getMid());
@@ -272,16 +272,16 @@ public class MemberService {
         FavoriteListNameModel result_list = new FavoriteListNameModel();
         // 檢核會員帳號是否存在
         if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
-            return ResponseService.responseError("查無會員帳號");
+            return ResponseService.responseError("error", "查無會員帳號");
         }
 
         exist_list = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
         if (exist_list.size() > 1) {
-            return ResponseService.responseError("list_name: \"" + data.getList_name() + "\" 重複" + exist_list.size() + "筆");
+            return ResponseService.responseError("error", "list_name: \"" + data.getList_name() + "\" 重複" + exist_list.size() + "筆");
         }
         if (exist_list.size() == 1) {
             if (exist_list.get(0).getStatus().equals("0")) {
-                return ResponseService.responseError("list_name: \"" + data.getList_name() + "\" 已重複");
+                return ResponseService.responseError("error", "list_name: \"" + data.getList_name() + "\" 已重複");
             }
             // list is exist and status invalid, update list status to valid.
             exist_list.get(0).setStatus("0");
@@ -308,13 +308,13 @@ public class MemberService {
 
         // check member account exists.
         if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
-            return ResponseService.responseError("查無會員帳號");
+            return ResponseService.responseError("error", "查無會員帳號");
         }
 
         // check list is exists and valid.
         exist_list = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
         if (exist_list.size() == 0 || !exist_list.get(0).getStatus().equals("0"))
-            return ResponseService.responseError("list_name: \"" + data.getList_name() + "\" 尚未創建");
+            return ResponseService.responseError("error", "list_name: \"" + data.getList_name() + "\" 尚未創建");
 
         // update list status into invalid.
         exist_list.get(0).setStatus("1");
@@ -340,25 +340,25 @@ public class MemberService {
 
         // 檢核會員帳號是否存在
         if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
-            return ResponseService.responseError("查無會員帳號");
+            return ResponseService.responseError("error", "查無會員帳號");
         }
 
         list_name = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
         if (list_name.size() == 0) {
-            return ResponseService.responseError("查無list_name: \"" + data.getList_name() + "\"無法新增");
+            return ResponseService.responseError("error", "查無list_name: \"" + data.getList_name() + "\"無法新增");
         }
         if (list_name.size() > 1) {
-            return ResponseService.responseError("favorite list name資料異常，重複共" + list_name.size() + "筆");
+            return ResponseService.responseError("error", "favorite list name資料異常，重複共" + list_name.size() + "筆");
         }
 
         list_datail = ListDetailRepo.FindListStockInfoByListNameIdAndStock(list_name.get(0).getList_name_id(),
                 data.getStock_id());
         if (list_datail.size() > 1) {
-            return ResponseService.responseError("stock id資料異常，重複共" + list_datail.size() + "筆");
+            return ResponseService.responseError("error", " stock id資料異常，重複共" + list_datail.size() + "筆");
         }
         if (list_datail.size() != 0) {
             if (list_datail.get(0).getStatus().equals("0")) {
-                return ResponseService.responseError("資料已創建");
+                return ResponseService.responseError("error", " 資料已創建");
             }
             // list is exist and status invalid, update list status to valid.
             if (!list_name.get(0).getStatus().equals("0")) {
@@ -390,25 +390,25 @@ public class MemberService {
 
         // check member account exists.
         if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
-            return ResponseService.responseError("查無會員帳號");
+            return ResponseService.responseError("error", " 查無會員帳號");
         }
         // check list is exists and get list_name_id.
         exist_list = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
         if (exist_list.size() == 0) {
-            return ResponseService.responseError("list_name: \"" + data.getList_name() + "\" 尚未創建");
+            return ResponseService.responseError("error", " list_name: \"" + data.getList_name() + "\" 尚未創建");
         }
         if (exist_list.size() > 1) {
-            return ResponseService.responseError("list_name資料異常，重複共" + exist_list.size());
+            return ResponseService.responseError("error", " list_name資料異常，重複共" + exist_list.size());
         }
 
         // get stock_list info
         stock_list = ListDetailRepo.FindListStockInfoByListNameIdAndStock(exist_list.get(0).getList_name_id(),
                 data.getStock_id());
         if (stock_list.size() > 1) {
-            return ResponseService.responseError("stock_id資料異常，重複共" + stock_list.size() + "筆");
+            return ResponseService.responseError("error", " stock_id資料異常，重複共" + stock_list.size() + "筆");
         }
         if (stock_list.size() == 0 || !stock_list.get(0).getStatus().equals("0")) {
-            return ResponseService.responseError("list中查無此stock_id");
+            return ResponseService.responseError("error", " list中查無此stock_id");
         }
 
         // update valid stock_list into invalid.
@@ -425,7 +425,7 @@ public class MemberService {
 
         // check member account exists.
         if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
-            return ResponseService.responseError("查無會員帳號");
+            return ResponseService.responseError("error", " 查無會員帳號");
         }
         // check list is exists and get each list_name_id.
         exist_lists = ListNameRepo.FindListByMemberId(member.getMid());

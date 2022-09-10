@@ -118,7 +118,7 @@ public class TWSEService {
 
             return ResponseService.responseJSONArraySuccess(company_list);
         } catch (IOException io) {
-            return ResponseService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -177,7 +177,7 @@ public class TWSEService {
             }
             return ResponseService.responseSuccess(stock);
         } catch (IOException io) {
-            return ResponseService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -195,7 +195,7 @@ public class TWSEService {
 
             return CompanyDividendPolicyDataParsing(all_lines);
         } catch (IOException io) {
-            return ResponseService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -219,9 +219,9 @@ public class TWSEService {
                 return StockTradeInfoYearly(all_lines, specific_date);
             }
 
-            return ResponseService.responseError("get stock trade info error.");
+            return ResponseService.responseError("error", "get stock trade info error.");
         } catch (IOException io) {
-            return ResponseService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -268,9 +268,9 @@ public class TWSEService {
 
                 return responseStockTradeInfoSuccess(stock_map);
             }
-            return ResponseService.responseError("查無符合資料");
+            return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
-            return ResponseService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -313,9 +313,9 @@ public class TWSEService {
 
                 return responseStockTradeInfoSuccess(stock_map);
             }
-            return ResponseService.responseError("查無符合資料");
+            return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
-            return ResponseService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -357,9 +357,9 @@ public class TWSEService {
 
                 return responseStockTradeInfoSuccess(stock_map);
             }
-            return ResponseService.responseError("查無符合資料");
+            return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
-            return ResponseService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -389,7 +389,7 @@ public class TWSEService {
 
             return responseCompanyDividendPolicySuccess(stock_map);
         } catch (IOException io) {
-            return ResponseService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 

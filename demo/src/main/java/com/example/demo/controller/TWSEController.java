@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.validation.constraints.*;
 
 import com.example.demo.Component.SpecificValidator;
+import com.example.demo.Service.ResponseService;
 import com.example.demo.Service.TWSEService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +37,7 @@ public class TWSEController {
             return company.getCompanyList(type);
         } catch (IOException e) {
             e.printStackTrace();
-            return company.responseError(e.toString());
+            return ResponseService.responseError(e.toString());
         }
     }
 
@@ -51,7 +52,7 @@ public class TWSEController {
             company = new TWSEService(stockUrl, stringRedisTemplate);
             return company.getCompanyInfoProfile();
         } catch (IOException e) {
-            return company.responseError(e.toString());
+            return ResponseService.responseError(e.toString());
         }
     }
 
@@ -67,7 +68,7 @@ public class TWSEController {
             return company.getCompanyDividendPolicy();
         } catch (IOException io) {
             io.printStackTrace();
-            return company.responseError(io.toString());
+            return ResponseService.responseError(io.toString());
         }
     }
 
@@ -104,7 +105,7 @@ public class TWSEController {
             return stock.getStockTradeInfo(type, Integer.parseInt(specific_date));
         } catch (IOException io) {
             io.printStackTrace();
-            return stock.responseError(io.toString());
+            return ResponseService.responseError(io.toString());
         }
     }
 }

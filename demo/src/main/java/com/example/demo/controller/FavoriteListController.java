@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 import net.sf.json.JSONObject;
 
 @RestController
-@EnableJpaAuditing
 @Validated
 public class FavoriteListController {
 
@@ -31,7 +30,7 @@ public class FavoriteListController {
     FavoriteListService favoriteListService = new FavoriteListService(stringRedisTemplate);
 
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    @GetMapping("/member/getFavoriteList")
+    @GetMapping("/favorite_list/getFavoriteList")
     public JSONObject getFavoriteList (
             @RequestParam("member_account")
             @NotEmpty(message = "it can not be empty.")
@@ -44,7 +43,7 @@ public class FavoriteListController {
     }
 
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    @PostMapping("/member/addFavoriteListName")
+    @PostMapping("/favorite_list/addFavoriteListName")
     public JSONObject addFavoriteListName(@Valid @RequestBody FavoriteListNameParam input) {
         try {
             return favoriteListService.addFavoriteListName(input);
@@ -54,7 +53,7 @@ public class FavoriteListController {
     }
 
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    @PostMapping("/member/updateFavoriteListName")
+    @PostMapping("/favorite_list/updateFavoriteListName")
     public JSONObject updateFavoriteListName(@Valid @RequestBody UpdateFavoriteListNameParam input) {
         try {
             return favoriteListService.updateFavoriteListName(input);
@@ -64,7 +63,7 @@ public class FavoriteListController {
     }
 
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    @PostMapping("/member/deleteFavoriteListName")
+    @PostMapping("/favorite_list/deleteFavoriteListName")
     public JSONObject deleteFavoriteListName(@Valid @RequestBody FavoriteListNameParam input) {
         try {
             return favoriteListService.deleteFavoriteListName(input);
@@ -74,7 +73,7 @@ public class FavoriteListController {
     }
 
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    @PostMapping("/member/addFavoriteListStock")
+    @PostMapping("/favorite_list/addFavoriteListStock")
     public JSONObject addFavoriteListStock(@Valid @RequestBody FavoriteListDetailParam input) {
         try {
             return favoriteListService.addFavoriteListStock(input);
@@ -84,7 +83,7 @@ public class FavoriteListController {
     }
 
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    @PostMapping("/member/deleteFavoriteListStock")
+    @PostMapping("/favorite_list/deleteFavoriteListStock")
     public JSONObject deleteFavoriteListStock(@Valid @RequestBody FavoriteListStockDeleteParam input) {
         try {
             return favoriteListService.deleteFavoriteListStock(input);
@@ -94,7 +93,7 @@ public class FavoriteListController {
     }
 
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    @PostMapping("/member/updateFavoriteListStockComment")
+    @PostMapping("/favorite_list/updateFavoriteListStockComment")
     public JSONObject updateFavoriteListStockComment(@Valid @RequestBody FavoriteListStockCommentParam input) {
         try {
             return favoriteListService.updateFavoriteListStockComment(input);

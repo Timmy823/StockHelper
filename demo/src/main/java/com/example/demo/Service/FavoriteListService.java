@@ -8,26 +8,20 @@ import com.example.demo.Entity.FavoriteListNameModel;
 import com.example.demo.Entity.MemberModel;
 import com.example.demo.Repository.FavoriteListDetailRespository;
 import com.example.demo.Repository.FavoriteListNameRespository;
-import com.example.demo.Repository.LoginLogRespository;
 import com.example.demo.Repository.MemberRespository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
-import lombok.Data;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
-@Data
 @Service
 public class FavoriteListService {
     private StringRedisTemplate stringRedisTemplate;
     @Autowired
     private MemberRespository MemberRepo;
-
-    @Autowired
-    private LoginLogRespository LoginLogRepo;
     @Autowired
     private FavoriteListNameRespository ListNameRepo;
     @Autowired

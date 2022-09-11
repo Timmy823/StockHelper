@@ -109,6 +109,13 @@ public class StockService {
                     break;
                 }
             }
+            //if buy and sell are empty. add "" into  investor trade info 
+                
+            if(investor_trade_info.size() == 0) {
+                for(int i= 0; i< trade_info_string.length; i++) {
+                    investor_trade_info.put(trade_info_string[i], "0");
+                }
+            }
 
             II_info.put(institutional_investors_string[url_index], investor_trade_info);
             return getShareNumbersOfIIListedStockTransaction(++url_index, url, II_info, stock_id, redis_key);

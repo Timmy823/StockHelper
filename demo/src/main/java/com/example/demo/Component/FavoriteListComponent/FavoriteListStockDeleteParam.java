@@ -1,4 +1,4 @@
-package com.example.demo.Component.MemberComponent;
+package com.example.demo.Component.FavoriteListComponent;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
@@ -16,7 +16,7 @@ public class FavoriteListStockDeleteParam {
 
     @NotNull(message = "favorite_list_name不可為null")
     @NotEmpty(message = "favorite_list_name不可為空")
-    @Size(max = 50, message="favorite_list_name最長50")
+    @Size(max = 50, message = "favorite_list_name最長50")
     private String list_name;
 
     @NotNull(message = "stock_id不可為null")

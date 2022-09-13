@@ -1,4 +1,4 @@
-package com.example.demo.Component.MemberComponent;
+package com.example.demo.Component.FavoriteListComponent;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;

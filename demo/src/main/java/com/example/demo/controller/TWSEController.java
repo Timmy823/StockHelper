@@ -45,7 +45,7 @@ public class TWSEController {
 
         try {
             twse = new TWSEService(stockUrl, stringRedisTemplate);
-            return twse.getCompanyDividendPolicy();
+            return twse.getCompanyDividendPolicy(id);
         } catch (IOException io) {
             io.printStackTrace();
             return twse.responseError(io.toString());

@@ -6,12 +6,13 @@ import javax.validation.constraints.NotEmpty;
 import com.example.demo.Component.GetMemberInfoParam;
 import com.example.demo.Component.MemberRegisterParam;
 import com.example.demo.Component.MemberUpdateParam;
-import com.example.demo.Component.MemberComponent.FavoriteListDetailParam;
-import com.example.demo.Component.MemberComponent.FavoriteListNameParam;
-import com.example.demo.Component.MemberComponent.FavoriteListStockCommentParam;
-import com.example.demo.Component.MemberComponent.FavoriteListStockDeleteParam;
-import com.example.demo.Component.MemberComponent.UpdateFavoriteListNameParam;
+import com.example.demo.Component.FavoriteListComponent.FavoriteListDetailParam;
+import com.example.demo.Component.FavoriteListComponent.FavoriteListNameParam;
+import com.example.demo.Component.FavoriteListComponent.FavoriteListStockCommentParam;
+import com.example.demo.Component.FavoriteListComponent.FavoriteListStockDeleteParam;
+import com.example.demo.Component.FavoriteListComponent.UpdateFavoriteListNameParam;
 import com.example.demo.Service.MemberService;
+import com.example.demo.Service.ResponseService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
@@ -41,7 +42,7 @@ public class MemberController {
         try {
             return memberService.createMember(input);
         } catch (Exception io) {
-            return memberService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -51,7 +52,7 @@ public class MemberController {
         try {
             return memberService.getMemberInfo(input);
         } catch (Exception io) {
-            return memberService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -61,7 +62,7 @@ public class MemberController {
         try {
             return memberService.updateMember(input);
         } catch (Exception io) {
-            return memberService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -71,7 +72,7 @@ public class MemberController {
         try {
             return memberService.SendEmailCertification(input);
         } catch (Exception io) {
-            return memberService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -84,7 +85,7 @@ public class MemberController {
         try {
             return memberService.getFavoriteList(member_account);
         } catch (Exception io) {
-            return memberService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -94,7 +95,7 @@ public class MemberController {
         try {
             return memberService.addFavoriteListName(input);
         } catch (Exception io) {
-            return memberService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -104,7 +105,7 @@ public class MemberController {
         try {
             return memberService.updateFavoriteListName(input);
         } catch (Exception io) {
-            return memberService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -114,7 +115,7 @@ public class MemberController {
         try {
             return memberService.deleteFavoriteListName(input);
         } catch (Exception io) {
-            return memberService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -124,7 +125,7 @@ public class MemberController {
         try {
             return memberService.addFavoriteListStock(input);
         } catch (Exception io) {
-            return memberService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -134,7 +135,7 @@ public class MemberController {
         try {
             return memberService.deleteFavoriteListStock(input);
         } catch (Exception io) {
-            return memberService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -144,7 +145,7 @@ public class MemberController {
         try {
             return memberService.updateFavoriteListStockComment(input);
         } catch (Exception io) {
-            return memberService.responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 }

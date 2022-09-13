@@ -76,7 +76,7 @@ public class TWSEService {
             String company_list_string = this.stringRedisTemplate.opsForValue().get(get_company_list_redis_key);
             if (company_list_string != null) {
                 System.out.println(company_list_string);
-                return responseSuccess(JSONArray.fromObject(company_list_string));
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(company_list_string));
             }
 
             JSONArray company_list = new JSONArray();
@@ -116,9 +116,9 @@ public class TWSEService {
             this.stringRedisTemplate.opsForValue().setIfAbsent(get_company_list_redis_key,
                     company_list.toString(), redis_ttl, TimeUnit.SECONDS);
 
-            return responseSuccess(company_list);
+            return ResponseService.responseJSONArraySuccess(company_list);
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -175,9 +175,9 @@ public class TWSEService {
                 if (items_position.contains(i))
                     stock.element(stock_items[count++], split_string[split_string.length - 1].trim());
             }
-            return responseCompanyProfileSuccess(stock);
+            return ResponseService.responseSuccess(stock);
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -195,7 +195,7 @@ public class TWSEService {
 
             return CompanyDividendPolicyDataParsing(all_lines);
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -219,9 +219,9 @@ public class TWSEService {
                 return StockTradeInfoYearly(all_lines, specific_date);
             }
 
-            return responseError("get stock trade info error.");
+            return ResponseService.responseError("error", "get stock trade info error.");
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -268,9 +268,9 @@ public class TWSEService {
 
                 return responseStockTradeInfoSuccess(stock_map);
             }
-            return responseError("查無符合資料");
+            return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -313,9 +313,9 @@ public class TWSEService {
 
                 return responseStockTradeInfoSuccess(stock_map);
             }
-            return responseError("查無符合資料");
+            return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -357,9 +357,9 @@ public class TWSEService {
 
                 return responseStockTradeInfoSuccess(stock_map);
             }
-            return responseError("查無符合資料");
+            return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -389,7 +389,7 @@ public class TWSEService {
 
             return responseCompanyDividendPolicySuccess(stock_map);
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -424,31 +424,6 @@ public class TWSEService {
             e.printStackTrace();
         }
         return trust;
-    }
-
-    private JSONObject responseSuccess(JSONArray json_array_data) {
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-
-        status_code.put("status", "success");
-        status_code.put("desc", "");
-
-        result.put("metadata", status_code);
-        result.put("data", json_array_data);
-
-        return result;
-    }
-
-    private JSONObject responseCompanyProfileSuccess(JSONObject data) {
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-
-        status_code.put("status", "success");
-        status_code.put("desc", "");
-
-        result.put("metadata", status_code);
-        result.put("data", data);
-        return result;
     }
 
     private JSONObject responseCompanyDividendPolicySuccess(HashMap<String, ArrayList<String>> stock_map) {
@@ -506,21 +481,6 @@ public class TWSEService {
         result.put("metadata", status_code);
         result.put("data", data);
 
-        return result;
-    }
-
-    public JSONObject responseError(String error_msg) {
-        JSONObject data = new JSONObject();
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-
-        data.put("data", "");
-
-        status_code.put("status", "error");
-        status_code.put("desc", error_msg);
-
-        result.put("metadata", status_code);
-        result.put("data", data);
         return result;
     }
 }

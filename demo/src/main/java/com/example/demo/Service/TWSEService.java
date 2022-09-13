@@ -28,8 +28,6 @@ public class TWSEService {
     private String stockUrl;
     String[] stock_info_items = { "date", "number", "amount", "openning", "highest", "lowest", "closing", "tradeVolume",
             "average", "turnoverRate" };
-    String[] stock_index_items = { "period", "dividend", "right",
-            "dividend_date", "right_date", "payment_date", "right_payment_date", "makeup_days" };
 
     public TWSEService(String stockUrl, StringRedisTemplate stringRedisTemplate) throws IOException {
         this.stockUrl = stockUrl;
@@ -181,8 +179,22 @@ public class TWSEService {
         }
     }
 
-    public JSONObject getCompanyDividendPolicy() {
+    public JSONObject getCompanyDividendPolicy(String stock_id) {
         try {
+            String get_company_dividend_redis_key = "company_history_dividend_policy:" + stock_id;
+            int redis_ttl = 86400; // redis存活1天
+
+            String company_dividend_string = this.stringRedisTemplate.opsForValue().get(get_company_dividend_redis_key);
+            if (company_dividend_string != null) {
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(company_dividend_string));
+            }
+
+            // make up dividend days 指的是填息天數。
+            String[] stock_dividend_items = { "dividend_period", "cash_dividend(dollors)", "stock_dividend(shares)",
+                    "EX-dividend_date", "EX-right_date", "dividend_payment_date", "right_payment_date",
+                    "make_up_dividend_days" };
+            JSONArray dividend_info_array = new JSONArray();
+
             InputStream URLStream = openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream, "UTF-8"));
 
@@ -193,7 +205,28 @@ public class TWSEService {
                 all_lines += line;
             }
 
-            return CompanyDividendPolicyDataParsing(all_lines);
+            // 只需要取得股利政策的table底下的<li class="List(n)">
+            Document doc = Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
+            Elements li_lists = doc.select("div.table-body-wrapper").get(0).select("li");
+
+            // html div element format ={股利所屬期間,現金股利,股票股利,除息日,除權日,現金股利發放日,股票股利發放,填息天數,股利合計}
+            for (int i = 0; i < li_lists.size(); i++) {
+                // 要取得的八個div element外面包了一層div、第一個element "股利所屬期間" 另外又包了一層div，故加起來有10個div。
+                Elements tds = li_lists.get(i).select("div").get(0).select("div");
+                if (tds.size() != 10)
+                    continue;
+
+                JSONObject stock_ifo = new JSONObject();
+                for (int j = 2; j < tds.size(); j++) {
+                    stock_ifo.element(stock_dividend_items[j - 2], tds.get(j).text());
+                }
+                dividend_info_array.add(stock_ifo);
+            }
+
+            this.stringRedisTemplate.opsForValue().setIfAbsent(get_company_dividend_redis_key,
+                    dividend_info_array.toString(), redis_ttl, TimeUnit.SECONDS);
+
+            return ResponseService.responseJSONArraySuccess(dividend_info_array);
         } catch (IOException io) {
             return ResponseService.responseError("error", io.toString());
         }
@@ -363,36 +396,6 @@ public class TWSEService {
         }
     }
 
-    private JSONObject CompanyDividendPolicyDataParsing(String all_lines) {
-        try {
-            HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
-            for (int i = 0; i < stock_index_items.length; i++) {
-                stock_map.put(stock_index_items[i], new ArrayList<String>());
-            }
-
-            // 只需要取得股利政策的table底下的<li class="List(n)">
-            Document doc = Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
-            Elements li_lists = doc.select("div.table-body-wrapper").get(0).select("li");
-
-            // html div element format ={股利所屬期間,現金股利,股票股利,除息日,除權日,現金股利發放日,股票股利發放,填息天數,股利合計}
-            for (int i = 0; i < li_lists.size(); i++) {
-                // 要取得的八個div element外面包了一層div、第一個element "股利所屬期間" 另外又包了一層div，故加起來有10個div。
-                Elements tds = li_lists.get(i).select("div").get(0).select("div");
-
-                if (tds.size() != 10)
-                    continue;
-
-                for (int j = 2; j < tds.size(); j++) {
-                    stock_map.get(stock_index_items[j - 2]).add(tds.get(j).text());
-                }
-            }
-
-            return responseCompanyDividendPolicySuccess(stock_map);
-        } catch (IOException io) {
-            return ResponseService.responseError("error", io.toString());
-        }
-    }
-
     /**
      * 建立ssl憑證
      * 
@@ -424,33 +427,6 @@ public class TWSEService {
             e.printStackTrace();
         }
         return trust;
-    }
-
-    private JSONObject responseCompanyDividendPolicySuccess(HashMap<String, ArrayList<String>> stock_map) {
-        JSONArray allstockArray = new JSONArray();
-        JSONObject data = new JSONObject();
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-        // make up dividend days 指的是填息天數。
-        String[] request_key = { "dividend_period", "cash_dividend(dollors)", "stock_dividend(shares)",
-                "EX-dividend_date", "EX-right_date", "dividend_payment_date", "right_payment_date",
-                "make_up_dividend_days" };
-
-        for (int i = 0; i < stock_map.get(stock_index_items[0]).size(); i++) {
-            JSONObject tempstock = new JSONObject();
-            for (int j = 0; j < request_key.length; j++) {
-                tempstock.element(request_key[j], stock_map.get(stock_index_items[j]).get(i));
-            }
-            allstockArray.add(tempstock);
-        }
-        data.put("stockdata", allstockArray);
-
-        status_code.put("status", "success");
-        status_code.put("desc", "");
-
-        result.put("metadata", status_code);
-        result.put("data", data);
-        return result;
     }
 
     private JSONObject responseStockTradeInfoSuccess(HashMap<String, ArrayList<String>> stock_map) {

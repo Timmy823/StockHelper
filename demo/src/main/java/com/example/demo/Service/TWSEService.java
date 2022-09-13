@@ -182,12 +182,11 @@ public class TWSEService {
     public JSONObject getCompanyDividendPolicy(String stock_id) {
         try {
             String get_company_dividend_redis_key = "company_history_dividend_policy:" + stock_id;
-            int redis_ttl = 86400 * 7; // redis存活7天
+            int redis_ttl = 86400; // redis存活1天
 
             String company_dividend_string = this.stringRedisTemplate.opsForValue().get(get_company_dividend_redis_key);
             if (company_dividend_string != null) {
-                System.out.println(company_dividend_string);
-                return responseSuccess(JSONArray.fromObject(company_dividend_string));
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(company_dividend_string));
             }
 
             // make up dividend days 指的是填息天數。
@@ -227,7 +226,7 @@ public class TWSEService {
             this.stringRedisTemplate.opsForValue().setIfAbsent(get_company_dividend_redis_key,
                     dividend_info_array.toString(), redis_ttl, TimeUnit.SECONDS);
 
-            return responseSuccess(dividend_info_array);
+            return ResponseService.responseJSONArraySuccess(dividend_info_array);
         } catch (IOException io) {
             return ResponseService.responseError("error", io.toString());
         }
@@ -428,19 +427,6 @@ public class TWSEService {
             e.printStackTrace();
         }
         return trust;
-    }
-
-    private JSONObject responseSuccess(JSONArray json_array_data) {
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-
-        status_code.put("status", "success");
-        status_code.put("desc", "");
-
-        result.put("metadata", status_code);
-        result.put("data", json_array_data);
-
-        return result;
     }
 
     private JSONObject responseStockTradeInfoSuccess(HashMap<String, ArrayList<String>> stock_map) {

@@ -71,12 +71,9 @@ public class TWSEController {
     @CrossOrigin(origins = "*", allowedHeaders = "*")
     public JSONObject getStockTradeInfo(TWSEService stock,
             @RequestParam("stock_id") @NotEmpty(message = "it can not be empty.") String stock_id,
-
             @RequestParam("type") @NotEmpty(message = "it can not be empty.") @SpecificValidator(strValues = { "1", "2",
                     "3" }, message = "type必須為指定\"1\"或\"2\"或\"3\"") String type,
-
             @RequestParam("specific_date") @Pattern(regexp = "^(((?:19|20)[0-9]{2})(0?[1-9]|1[012])(0?[1-9]|[12][0-9]|3[01]))$", message = "格式錯誤") String specific_date) {
-
         String stockUrl = "";
         if (type.equals("1"))
             stockUrl = "https://www.twse.com.tw/exchangeReport/STOCK_DAY?response=html&date=" + specific_date

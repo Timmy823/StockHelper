@@ -76,12 +76,14 @@ public class TWSEService {
 
             String product_ratio_string = this.stringRedisTemplate.opsForValue().get(get_product_ratio_redis_key);
             if (product_ratio_string != null) {
-                return responseSuccess(JSONArray.fromObject(product_ratio_string));
+                return  ResponseService.responseJSONArraySuccess(JSONArray.fromObject(product_ratio_string));
             }
 
             JSONArray result_Array = new JSONArray();
             
-            InputStream URLstream = openURL(this.stockUrl);
+            //https connection 
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
             String line = null;
             String alllines = "";
@@ -138,14 +140,17 @@ public class TWSEService {
                     product_array.add(product_item);
                 }
             }
+
             //put the final product_array into revenue
-            revenue.put("detail", product_array);
-            result_Array.add(revenue);
+            if(product_array.size() != 0) {
+                revenue.put("detail", product_array);
+                result_Array.add(revenue);
+            }
 
             this.stringRedisTemplate.opsForValue().setIfAbsent(get_product_ratio_redis_key,
                     result_Array.toString(), redis_ttl, TimeUnit.SECONDS);
 
-            return responseSuccess(result_Array);
+            return ResponseService.responseJSONArraySuccess(result_Array);
         } catch (IOException io) {
             return responseError(io.toString());
         }

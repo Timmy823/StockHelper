@@ -10,8 +10,6 @@ import javax.net.ssl.X509TrustManager;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import com.example.demo.Component.StockComponent.StockIdParam;
-
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -56,11 +54,11 @@ public class TWSEService {
         return url_connection.getInputStream();
     }
     
-    public JSONObject getCompanyMonthlyRevenue(StockIdParam data) {
+    public JSONObject getCompanyMonthlyRevenue(String stock_id) {
         try{
             //check redis
-            String monthly_revenue_redis_key = "monthly_revenue : " + data.getStock_id();
-            int redis_ttl = 86400 * 3; // redis存活3天
+            String monthly_revenue_redis_key = "monthly_revenue : " + stock_id;
+            int redis_ttl = 86400 * 1; // redis存活1天
 
             String monthly_revenue_string = this.stringRedisTemplate.opsForValue().get(monthly_revenue_redis_key);
             if (monthly_revenue_string != null) {

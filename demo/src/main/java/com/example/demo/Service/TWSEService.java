@@ -165,9 +165,9 @@ public class TWSEService {
                 return listedStockTradeInfoYearly(all_lines, specific_date, stock_id);
             }
 
-            return responseError("get stock trade info error.");
+            return ResponseService.responseError("error", "get stock trade info error.");
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -181,7 +181,7 @@ public class TWSEService {
             
             String stock_info_string = this.stringRedisTemplate.opsForValue().get(trade_info_redis_key);
             if (stock_info_string != null) {
-                return responseSuccess(JSONArray.fromObject(stock_info_string));
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(stock_info_string));
             }
 
             Document doc = Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
@@ -222,11 +222,11 @@ public class TWSEService {
                 this.stringRedisTemplate.opsForValue().setIfAbsent(trade_info_redis_key,
                     trade_info_array.toString(), redis_ttl, TimeUnit.SECONDS);
 
-                return responseSuccess(trade_info_array);
+                return ResponseService.responseJSONArraySuccess(trade_info_array);
             }
-            return responseError("查無符合資料");
+            return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -240,7 +240,7 @@ public class TWSEService {
 
             String stock_info_string = this.stringRedisTemplate.opsForValue().get(trade_info_redis_key);
             if (stock_info_string != null) {
-                return responseSuccess(JSONArray.fromObject(stock_info_string));
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(stock_info_string));
             }
 
             Document doc = Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
@@ -277,11 +277,11 @@ public class TWSEService {
                 this.stringRedisTemplate.opsForValue().setIfAbsent(trade_info_redis_key,
                     trade_info_array.toString(), redis_ttl, TimeUnit.SECONDS);
 
-                return responseSuccess(trade_info_array);
+                return ResponseService.responseJSONArraySuccess(trade_info_array);
             }
-            return responseError("查無符合資料");
+            return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -295,7 +295,7 @@ public class TWSEService {
 
             String stock_info_string = this.stringRedisTemplate.opsForValue().get(trade_info_redis_key);
             if (stock_info_string != null) {
-                return responseSuccess(JSONArray.fromObject(stock_info_string));
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(stock_info_string));
             }
 
             Document doc = Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
@@ -332,11 +332,11 @@ public class TWSEService {
                 this.stringRedisTemplate.opsForValue().setIfAbsent(trade_info_redis_key,
                     trade_info_array.toString(), redis_ttl, TimeUnit.SECONDS);
 
-                return responseSuccess(trade_info_array);
+                return ResponseService.responseJSONArraySuccess(trade_info_array);
             }
-            return responseError("查無符合資料");
+            return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 

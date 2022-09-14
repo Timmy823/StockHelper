@@ -1,13 +1,6 @@
 package com.example.demo.Service;
 import java.io.*;
 
-import org.jsoup.Jsoup;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.jsoup.nodes.Document;
-
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -19,8 +12,12 @@ public class TWSEService {
     }
     
     public JSONObject  getStockRealtimeOTCTradeInfo() {
-        try{
+        String [] web_info_string ={"v","o","h","l","u","w","t","z","tv"};
+        String[] trade_info_string = {"accumulation_volume","openning_price","highest_price","lowest_price","limit_up","limit_down"
+        ,"trade_time","price","trade_volume"};
 
+        try{
+            JSONObject realtime_trade_info = new JSONObject();
             //取得html內文 body資料
             HttpsService open_url = new HttpsService();
             InputStream URLstream = open_url.openURL(this.stockUrl);
@@ -33,72 +30,15 @@ public class TWSEService {
                 all_lines+=line;
             }
 
-            return StockRealtimeOTCTradeInfoDataParsing(all_lines);  
-        }catch(IOException io){
-            return responseError(io.toString());
-        }
-    }
-
-    public JSONObject StockRealtimeOTCTradeInfoDataParsing(String all_lines){
-        String [] web_info_key ={"v","o","h","l","u","w","t","z","tv"};
-        String[] request_key = {"accumulation_volume","openning_price","highest_price","lowest_price","limit_up","limit_down"
-        ,"trade_time","price","trade_volume"};
-
-        try{
-            //取得html內文 body資料
-            Document doc =  Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
-            String body = doc.select("body").text();
-            
-            //jackson解析json/array node
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode node = mapper.readTree(body);
-            //個股即時詳細資訊放在 "msgArray":[{}]
-            JsonNode realtime_info= node.get("msgArray").get(0);
-
-            if(realtime_info == null)
-                return responseError("網頁解析錯誤");
-
-            //取得指定資料並放入json object
-            JSONArray allstockArray= new JSONArray();
-            JSONObject object = new JSONObject();
-            for(int i=0; i<web_info_key.length; i++){
-                object.element(request_key[i], realtime_info.get(web_info_key[i]).toString().replaceAll("\"",""));
+            JSONArray realtime_info = JSONObject.fromObject(all_lines).getJSONArray("msgArray");
+            for (int i=0 ; i<realtime_info.size(); i++) {
+                for(int j=0; j<web_info_string.length ; j++){
+                    realtime_trade_info.element(trade_info_string[j], realtime_info.getJSONObject(i).getString(web_info_string[j]));
+                }
             }
-            allstockArray.add(object);
-            
-            return responseStockRealtimeOTCTradeInfoSuccess(allstockArray);
+            return ResponseService.responseSuccess(realtime_trade_info); 
         }catch(IOException io){
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
-    }
-
-    public JSONObject responseStockRealtimeOTCTradeInfoSuccess(JSONArray allstockArray){
-        JSONObject data = new JSONObject();
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-
-        data.put("stockdata",allstockArray);
-        
-        status_code.put("status", "success");
-        status_code.put("desc", "");
-
-        result.put("metadata", status_code);
-        result.put("data", data);
-        return result;
-    }
-
-    public JSONObject responseError(String error_msg) {
-        JSONObject data = new JSONObject();
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-    
-        data.put("data","");
-        
-        status_code.put("status", "error");
-        status_code.put("desc", error_msg);
-    
-        result.put("metadata", status_code);
-        result.put("data", data);
-        return result;
     }
 }

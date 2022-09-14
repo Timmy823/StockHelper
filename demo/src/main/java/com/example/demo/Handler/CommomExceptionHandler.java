@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
+import com.example.demo.Service.ResponseService;
+
 import net.sf.json.JSONObject;
 
 @RestControllerAdvice
@@ -16,26 +18,11 @@ public class CommomExceptionHandler {
     @ResponseBody
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
     public JSONObject processValidException(MethodArgumentNotValidException ex) throws Exception {
-        return ResponseBody(ex.getBindingResult().getFieldError().getDefaultMessage());
+        return ResponseService.responseError("99999", ex.getBindingResult().getFieldError().getDefaultMessage());
     }
 
     @ExceptionHandler
     public JSONObject badRequestException(Exception ex) {
-        return ResponseBody(ex.getMessage());
-    }
-
-    private JSONObject ResponseBody(String message) {
-        JSONObject data = new JSONObject();
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-        data.put("data", "");
-
-        status_code.put("status", "99999");
-        status_code.put("desc", message);
-
-        result.put("metadata", status_code);
-        result.put("data", data);
-
-        return result;
+        return ResponseService.responseError("99999", ex.getMessage());
     }
 }

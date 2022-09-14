@@ -143,7 +143,7 @@ public class TWSEService {
         }
     }
 
-    public JSONObject getStockTradeInfo(String type, Integer specific_date) {
+    public JSONObject getListedStockTradeInfo(String type, Integer specific_date, String stock_id) {
         try {
             InputStream URLStream = openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream, "UTF-8"));
@@ -156,24 +156,30 @@ public class TWSEService {
             }
 
             if (type.equals("1")) {
-                return StockTradeInfoDaily(all_lines, specific_date);
+                return listedStockTradeInfoDaily(all_lines, specific_date, stock_id);
             } else if (type.equals("2")) {
-                return StockTradeInfoMonthly(all_lines, specific_date);
+                return listedStockTradeInfoMonthly(all_lines, specific_date, stock_id);
             } else if (type.equals("3")) {
-                return StockTradeInfoYearly(all_lines, specific_date);
+                return listedStockTradeInfoYearly(all_lines, specific_date, stock_id);
             }
 
-            return responseError("get stock trade info error.");
+            return ResponseService.responseError("error", "get stock trade info error.");
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
-    private JSONObject StockTradeInfoDaily(String all_lines, Integer specific_date) {
+    private JSONObject listedStockTradeInfoDaily(String all_lines, Integer specific_date, String stock_id) {
         try {
-            HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
-            for (int i = 0; i < stock_info_items.length; i++) {
-                stock_map.put(stock_info_items[i], new ArrayList<String>());
+            JSONArray trade_info_array = new JSONArray();
+            int redis_ttl = 86400; // redis存活1天
+
+            String trade_info_redis_key = "stock_trade_info_daily_" + specific_date + " : " 
+                    + stock_id;
+            
+            String stock_info_string = this.stringRedisTemplate.opsForValue().get(trade_info_redis_key);
+            if (stock_info_string != null) {
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(stock_info_string));
             }
 
             Document doc = Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
@@ -199,37 +205,47 @@ public class TWSEService {
                 if (!(temp_ymd == specific_date))
                     continue;
 
-                stock_map.get("date").add(String.valueOf(temp_ymd));
-                stock_map.get("number").add(tds.get(1).text());
-                stock_map.get("amount").add(tds.get(2).text());
-                stock_map.get("openning").add(tds.get(3).text());
-                stock_map.get("highest").add(tds.get(4).text());
-                stock_map.get("lowest").add(tds.get(5).text());
-                stock_map.get("closing").add(tds.get(6).text());
-                stock_map.get("tradeVolume").add(tds.get(8).text());
-                stock_map.get("turnoverRate").add("");
-                stock_map.get("average").add("");
+                JSONObject trade_info = new JSONObject();
+                trade_info.element("share_number(B)", tds.get(1).text());
+                trade_info.element("share_amount(A)", tds.get(2).text());
+                trade_info.element("trade_volume", tds.get(8).text());
+                trade_info.element("openning_price", tds.get(3).text());
+                trade_info.element("hightest_price", tds.get(4).text());
+                trade_info.element("lowest_price", tds.get(5).text());
+                trade_info.element("closing_price(average)", tds.get(6).text());
+                trade_info.element("the_average_of_ShareAmount(A)_and_ShareNumber(B)", "");
+                trade_info.element("turnover_rate(%)", "");
+                trade_info_array.add(trade_info);
 
-                return responseStockTradeInfoSuccess(stock_map);
+                this.stringRedisTemplate.opsForValue().setIfAbsent(trade_info_redis_key,
+                    trade_info_array.toString(), redis_ttl, TimeUnit.SECONDS);
+
+                return ResponseService.responseJSONArraySuccess(trade_info_array);
             }
-            return responseError("查無符合資料");
+            return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
-    private JSONObject StockTradeInfoMonthly(String all_lines, Integer specific_month) {
+    private JSONObject listedStockTradeInfoMonthly(String all_lines, Integer specific_date, String stock_id) {
         try {
-            HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
-            for (int i = 0; i < stock_info_items.length; i++) {
-                stock_map.put(stock_info_items[i], new ArrayList<String>());
+            JSONArray trade_info_array = new JSONArray();
+            int redis_ttl = 86400; // redis存活1天
+
+            String trade_info_redis_key = "stock_trade_info_monthly_" + specific_date.toString().substring(0, 6) + " : " 
+                    + stock_id;
+
+            String stock_info_string = this.stringRedisTemplate.opsForValue().get(trade_info_redis_key);
+            if (stock_info_string != null) {
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(stock_info_string));
             }
 
             Document doc = Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
 
             int temp_ymd = 0;
-            int specific_yyyymm = Integer.parseInt(specific_month.toString().substring(0, 6));
+            int specific_yyyymm = Integer.parseInt(specific_date.toString().substring(0, 6));
 
             // {年度,月份,最高價,最低價,加權(A/B)平均價,成交筆數,成交金額(A),成交股數(B),週轉率(%)}
             for (int i = trs.size() - 1; i > 1; i--) {
@@ -239,42 +255,52 @@ public class TWSEService {
                     continue;
 
                 temp_ymd = (1911 + Integer.parseInt(tds.get(0).text().trim())) * 100
-                        + Integer.parseInt(tds.get(1).text().trim());
+                    + Integer.parseInt(tds.get(1).text().trim());
 
                 if (!(temp_ymd == specific_yyyymm))
                     continue;
 
-                stock_map.get("date").add(String.valueOf(temp_ymd));
-                stock_map.get("highest").add(tds.get(2).text());
-                stock_map.get("lowest").add(tds.get(3).text());
-                stock_map.get("average").add(tds.get(4).text());
-                stock_map.get("tradeVolume").add(tds.get(5).text());
-                stock_map.get("amount").add(tds.get(6).text());
-                stock_map.get("number").add(tds.get(7).text());
-                stock_map.get("turnoverRate").add(tds.get(8).text());
-                stock_map.get("closing").add("");
-                stock_map.get("openning").add("");
+                JSONObject trade_info = new JSONObject();
+                trade_info.element("share_number(B)", tds.get(7).text());
+                trade_info.element("share_amount(A)", tds.get(6).text());
+                trade_info.element("trade_volume", tds.get(5).text());
+                trade_info.element("openning_price", "");
+                trade_info.element("hightest_price", tds.get(2).text());
+                trade_info.element("lowest_price", tds.get(3).text());
+                trade_info.element("closing_price(average)", "");
+                trade_info.element("the_average_of_ShareAmount(A)_and_ShareNumber(B)", tds.get(4).text());
+                trade_info.element("turnover_rate(%)", tds.get(8).text());
+                trade_info_array.add(trade_info);
 
-                return responseStockTradeInfoSuccess(stock_map);
+                this.stringRedisTemplate.opsForValue().setIfAbsent(trade_info_redis_key,
+                    trade_info_array.toString(), redis_ttl, TimeUnit.SECONDS);
+
+                return ResponseService.responseJSONArraySuccess(trade_info_array);
             }
-            return responseError("查無符合資料");
+            return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
-    private JSONObject StockTradeInfoYearly(String all_lines, Integer specific_year) {
+    private JSONObject listedStockTradeInfoYearly(String all_lines, Integer specific_date, String stock_id) {
         try {
-            HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
-            for (int i = 0; i < stock_info_items.length; i++) {
-                stock_map.put(stock_info_items[i], new ArrayList<String>());
+            JSONArray trade_info_array = new JSONArray();
+            int redis_ttl = 86400 * 30; // redis存活30天
+
+            String trade_info_redis_key = "stock_trade_info_yearly_" + specific_date.toString().substring(0, 4) + " : " 
+                    + stock_id;
+
+            String stock_info_string = this.stringRedisTemplate.opsForValue().get(trade_info_redis_key);
+            if (stock_info_string != null) {
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(stock_info_string));
             }
 
             Document doc = Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
 
             int temp_ymd = 0;
-            int specific_yyyy = Integer.parseInt(specific_year.toString().substring(0, 4));
+            int specific_yyyy = Integer.parseInt(specific_date.toString().substring(0, 4));
 
             // {年度,成交股數,成交金額,成交筆數,最高價,日期,最低價,日期,收盤平均價}
             for (int i = trs.size() - 1; i > 1; i--) {
@@ -284,26 +310,31 @@ public class TWSEService {
                     continue;
 
                 temp_ymd = 1911 + Integer.parseInt(tds.get(0).text().trim());
-
                 if (!(temp_ymd == specific_yyyy))
                     continue;
 
-                stock_map.get("date").add(String.valueOf(temp_ymd));
-                stock_map.get("number").add(tds.get(1).text());
-                stock_map.get("amount").add(tds.get(2).text());
-                stock_map.get("openning").add("");
-                stock_map.get("highest").add(tds.get(4).text());
-                stock_map.get("lowest").add(tds.get(6).text());
-                stock_map.get("closing").add("");
-                stock_map.get("tradeVolume").add(tds.get(3).text());
-                stock_map.get("turnoverRate").add("");
-                stock_map.get("average").add(tds.get(8).text());
+                JSONObject trade_info = new JSONObject();
+                trade_info.element("share_number(B)", tds.get(1).text());
+                trade_info.element("share_amount(A)", tds.get(2).text());
+                trade_info.element("trade_volume", tds.get(3).text());
+                trade_info.element("openning_price", "");
+                trade_info.element("hightest_price", tds.get(4).text());
+                trade_info.element("lowest_price", tds.get(6).text());
+                trade_info.element("closing_price(average)", "");
+                trade_info.element("the_average_of_ShareAmount(A)_and_ShareNumber(B)", 
+                    tds.get(8).text());
+                trade_info.element("turnover_rate(%)", "");
 
-                return responseStockTradeInfoSuccess(stock_map);
+                trade_info_array.add(trade_info);
+
+                this.stringRedisTemplate.opsForValue().setIfAbsent(trade_info_redis_key,
+                    trade_info_array.toString(), redis_ttl, TimeUnit.SECONDS);
+
+                return ResponseService.responseJSONArraySuccess(trade_info_array);
             }
-            return responseError("查無符合資料");
+            return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -407,37 +438,6 @@ public class TWSEService {
 
         result.put("metadata", status_code);
         result.put("data", data);
-        return result;
-    }
-
-    private JSONObject responseStockTradeInfoSuccess(HashMap<String, ArrayList<String>> stock_map) {
-        JSONArray allstockArray = new JSONArray();
-        JSONObject data = new JSONObject();
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-
-        for (int i = 0; i < stock_map.get("date").size(); i++) {
-            JSONObject tempstock = new JSONObject();
-            tempstock.element("share_number(B)", stock_map.get("number").get(i));
-            tempstock.element("share_amount(A)", stock_map.get("amount").get(i));
-            tempstock.element("trade_volume", stock_map.get("tradeVolume").get(i));
-            tempstock.element("openning_price", stock_map.get("openning").get(i));
-            tempstock.element("hightest_price", stock_map.get("highest").get(i));
-            tempstock.element("lowest_price", stock_map.get("lowest").get(i));
-            tempstock.element("closing_price(average)", stock_map.get("closing").get(i));
-            tempstock.element("the_average_of_ShareAmount(A)_and_ShareNumber(B)", stock_map.get("average").get(i));
-            tempstock.element("turnover_rate(%)", stock_map.get("turnoverRate").get(i));
-
-            allstockArray.add(tempstock);
-        }
-        data.put("stockdata", allstockArray);
-
-        status_code.put("status", "success");
-        status_code.put("desc", "");
-
-        result.put("metadata", status_code);
-        result.put("data", data);
-
         return result;
     }
 

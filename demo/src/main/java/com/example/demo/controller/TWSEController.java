@@ -67,9 +67,9 @@ public class TWSEController {
         }
     }
 
-    @GetMapping("/twse/getStockTradeInfo")
+    @GetMapping("/twse/getListedStockTradeInfo")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject getStockTradeInfo(TWSEService stock,
+    public JSONObject getListedStockTradeInfo(TWSEService stock,
             @RequestParam("stock_id") @NotEmpty(message = "it can not be empty.") String stock_id,
             @RequestParam("type") @NotEmpty(message = "it can not be empty.") @SpecificValidator(strValues = { "1", "2",
                     "3" }, message = "type必須為指定\"1\"或\"2\"或\"3\"") String type,
@@ -88,7 +88,7 @@ public class TWSEController {
 
         try {
             stock = new TWSEService(stockUrl, stringRedisTemplate);
-            return stock.getStockTradeInfo(type, Integer.parseInt(specific_date));
+            return stock.getListedStockTradeInfo(type, Integer.parseInt(specific_date), stock_id);
         } catch (IOException io) {
             io.printStackTrace();
             return ResponseService.responseError("error", io.toString());

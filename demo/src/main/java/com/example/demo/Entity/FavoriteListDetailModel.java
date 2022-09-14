@@ -12,7 +12,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.stereotype.Component;
 
-
 @Component
 @Entity
 @Data
@@ -24,8 +23,8 @@ public class FavoriteListDetailModel {
     @Column(name = "list_detail_id", unique = true)
     private Long list_detail_id;
 
-    @Column(name = "list_name_id", nullable = false, columnDefinition = "BINARY(36)")
-    private String list_name_id;
+    @Column(name = "list_name_id", nullable = false)
+    private Long list_name_id;
 
     @Column(name = "stock_id", nullable = false, length = 15)
     private String stock_id;

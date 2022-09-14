@@ -1,5 +1,6 @@
-package com.example.demo.controller;
+package com.example.demo.Controller;
 
+import com.example.demo.Service.ResponseService;
 import com.example.demo.Service.TWSEService;
 
 import net.sf.json.JSONObject;
@@ -22,7 +23,7 @@ public class TWSEController {
             return twse.getStockRealtimeOTCTradeInfo();
         }catch(IOException io){
             io.printStackTrace();
-            return twse.responseError(io.toString());
+            return ResponseService.responseError("99999", io.toString());
         }
     }
 }

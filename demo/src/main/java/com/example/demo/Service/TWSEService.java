@@ -1,8 +1,5 @@
 package com.example.demo.Service;
 import java.io.*;
-import java.net.URL;
-
-import javax.net.ssl.HttpsURLConnection;
 
 import org.jsoup.Jsoup;
 
@@ -21,39 +18,14 @@ public class TWSEService {
         this.stockUrl = stockUrl;
     }
     
-    private InputStream openURL(String urlPath) throws IOException{
-        URL url = new URL(urlPath);
-
-        // open a url connection.
-        HttpsURLConnection url_connection =  (HttpsURLConnection) url.openConnection();
-        url_connection.setDoInput(true);
-        url_connection.setDoOutput(true);
-
-        //set request method
-        url_connection.setRequestMethod("GET");
-        url_connection.setConnectTimeout(15000);
-        url_connection.setReadTimeout(15000);
-        //set request header 
-        url_connection.setRequestProperty("User-Agent", " Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36");
-        url_connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        url_connection.setRequestProperty("Content-Length", Integer.toString(1000));
-        url_connection.setRequestProperty("connection", "Keep-Alive");
-        
-        System.out.println("ready to connect!");
-        
-        url_connection.connect();
-        
-        //the method is used to access the header filed after the connection 
-        if(url_connection.getResponseCode() != 200){
-            System.out.print("\nConnection Fail:"+url_connection.getResponseCode());
-        }
-        return url_connection.getInputStream();            
-    }
-    
     public JSONObject  getStockRealtimeOTCTradeInfo() {
         try{
-            InputStream URLStream = openURL(this.stockUrl);
-            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream,"UTF-8"));
+
+            //取得html內文 body資料
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
+
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
 
             String line=null;
             String all_lines="";

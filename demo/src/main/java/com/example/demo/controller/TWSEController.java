@@ -7,17 +7,21 @@ import net.sf.json.JSONObject;
 
 import java.io.IOException;
 
+import javax.validation.constraints.*;
+
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class TWSEController {
     //上櫃股票每五秒揭示最近一次撮合結果
     @GetMapping("/twse/getStockRealtimeOTCInfo")
-    public JSONObject getStockRealtimeOTCTradeInfo(@RequestBody JSONObject input, TWSEService twse){
-        String id =input.getString("id");
-        String stockUrl= "https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=otc_"+id+".tw";
+    public JSONObject getStockRealtimeOTCTradeInfo(TWSEService twse, 
+        @RequestParam("stock_id")
+        @NotEmpty(message = "it can not be empty.")
+        String stock_id) {
+        String stockUrl= "https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=otc_" + stock_id + ".tw";
         try{
             twse= new TWSEService(stockUrl);
             return twse.getStockRealtimeOTCTradeInfo();

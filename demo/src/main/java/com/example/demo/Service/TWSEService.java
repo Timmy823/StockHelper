@@ -233,7 +233,7 @@ public class TWSEService {
             JSONArray trade_info_array = new JSONArray();
             int redis_ttl = 86400; // redis存活1天
 
-            String trade_info_redis_key = "stock_trade_info_monthly_" + specific_date + " : " 
+            String trade_info_redis_key = "stock_trade_info_monthly_" + specific_date.toString().substring(0, 6) + " : " 
                     + stock_id;
 
             String stock_info_string = this.stringRedisTemplate.opsForValue().get(trade_info_redis_key);
@@ -288,7 +288,7 @@ public class TWSEService {
             JSONArray trade_info_array = new JSONArray();
             int redis_ttl = 86400 * 30; // redis存活30天
 
-            String trade_info_redis_key = "stock_trade_info_yearly_" + specific_date + " : " 
+            String trade_info_redis_key = "stock_trade_info_yearly_" + specific_date.toString().substring(0, 4) + " : " 
                     + stock_id;
 
             String stock_info_string = this.stringRedisTemplate.opsForValue().get(trade_info_redis_key);

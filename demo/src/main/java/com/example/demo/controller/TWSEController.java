@@ -2,6 +2,7 @@ package com.example.demo.controller;
 import java.io.IOException;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 
 import com.example.demo.Component.StockComponent.StockIdParam;
 import com.example.demo.Service.TWSEService;
@@ -11,6 +12,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import net.sf.json.JSONObject;
@@ -22,11 +24,14 @@ public class TWSEController {
 
     @GetMapping("/twse/getCompanyYearlyRevenue")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject getCompanyYearlyRevenue(@Valid @RequestBody StockIdParam input, TWSEService twse){
-        String stockUrl= "https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.revenues;period=year;symbol="+ input.getStock_id();
+    public JSONObject getCompanyYearlyRevenue(TWSEService twse,
+        @RequestParam("stock_id")
+        @NotEmpty(message = "it can not be empty.")
+        String stock_id) {
+        String stockUrl= "https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.revenues;period=year;symbol="+ stock_id;
         try{
             twse= new TWSEService(stockUrl, stringRedisTemplate);
-            return twse.getCompanyYearlyRevenue(input);
+            return twse.getCompanyYearlyRevenue(stock_id);
         }catch(IOException io){
             io.printStackTrace();
             return twse.responseError(io.toString());

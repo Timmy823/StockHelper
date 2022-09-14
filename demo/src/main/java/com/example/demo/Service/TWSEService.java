@@ -19,8 +19,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import com.example.demo.Component.StockComponent.StockIdParam;
-
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -69,11 +67,12 @@ public class TWSEService {
 
         return url_connection.getInputStream();
     }
-    public JSONObject getStockEps(StockIdParam data) {
+
+    public JSONObject getStockEps(String stock_id) {
         try {
             //check redis
-            String stock_eps_redis_key = "eps : " + data.getStock_id();
-            int redis_ttl = 86400 * 3; // redis存活3天
+            String stock_eps_redis_key = "eps : " + stock_id;
+            int redis_ttl = 86400 ; // redis存活1天
 
             String eps_string = this.stringRedisTemplate.opsForValue().get(stock_eps_redis_key);
             if (eps_string != null) {
@@ -102,7 +101,9 @@ public class TWSEService {
             Q4.add("11");
             Q4.add("12");
 
-            InputStream URLstream = openURL(this.stockUrl);
+            //https connection 
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
             String line = null;
             String alllines = "";
@@ -138,9 +139,9 @@ public class TWSEService {
             
             this.stringRedisTemplate.opsForValue().setIfAbsent(stock_eps_redis_key,
                     eps_array.toString(), redis_ttl, TimeUnit.SECONDS);
-            return responseSuccess(eps_array);
+            return ResponseService.responseJSONArraySuccess(eps_array);
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 

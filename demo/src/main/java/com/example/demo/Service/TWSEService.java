@@ -68,7 +68,7 @@ public class TWSEService {
         return url_connection.getInputStream();
     }
 
-    public JSONObject getExtrangeTradedFundRatio(JSONObject type) {
+    public JSONObject getExtrangeTradedFundRatio(String stock_id) {
         try {
             String [] radio_info_string = {"industry_radio", "asset_distribution", "top_10_stock_radio"};
             JSONObject etf_ratio_info = new JSONObject();

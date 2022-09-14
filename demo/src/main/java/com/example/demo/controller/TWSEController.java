@@ -3,6 +3,7 @@ package com.example.demo.Controller;
 import java.io.IOException;
 
 import javax.validation.Valid;
+import javax.validation.constraints.*;
 
 import com.example.demo.Component.StockTradeInfoParam;
 import com.example.demo.Service.TWSEService;
@@ -12,6 +13,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import net.sf.json.JSONObject;
@@ -94,11 +96,14 @@ public class TWSEController {
     
     @GetMapping("/twse/getETFRatio")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
-    public JSONObject getExtrangeTradedFundRatio(@RequestBody JSONObject input, TWSEService stock) {
-        String stockUrl = "https://tw.stock.yahoo.com/quote/" + input.getString("stock_id") + "/holding";
+    public JSONObject getExtrangeTradedFundRatio(TWSEService stock,           
+        @RequestParam("stock_id")
+        @NotEmpty(message = "it can not be empty.")
+        String stock_id) {
+        String stockUrl = "https://tw.stock.yahoo.com/quote/" + stock_id + "/holding";
         try {
             stock = new TWSEService(stockUrl, stringRedisTemplate);
-            return stock.getExtrangeTradedFundRatio(input);
+            return stock.getExtrangeTradedFundRatio(stock_id);
         } catch (IOException e) {
             return stock.responseError(e.toString());
         }

@@ -19,8 +19,6 @@ import org.jsoup.select.Elements;
 
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import com.example.demo.Component.StockTradeInfoParam;
-
 import net.sf.json.*;
 
 public class TWSEService {

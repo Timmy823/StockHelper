@@ -145,25 +145,8 @@ public class TWSEService {
         }
     }
 
-    public JSONObject getStockTradeInfo(StockTradeInfoParam data) {
+    public JSONObject getListedStockTradeInfo(String type, Integer specific_date, String stock_id) {
         try {
-            String type = data.get_type();
-            Integer specific_date = data.get_date();
-            String trade_info_redis_key = " : " + data.get_stockID();
-            if (type.equals("1")) {
-                trade_info_redis_key = "stock_trade_info_daily_" + specific_date + trade_info_redis_key;
-            } else if (type.equals("2")) {
-                trade_info_redis_key = "stock_trade_info_monthly_" + specific_date.toString().substring(0, 6) + trade_info_redis_key;
-            } else if (type.equals("3")) {
-                trade_info_redis_key = "stock_trade_info_yearly_" + specific_date.toString().substring(0, 4) + trade_info_redis_key;
-            }
-
-            String stock_info_string = this.stringRedisTemplate.opsForValue().get(trade_info_redis_key);
-            if (stock_info_string != null) {
-                System.out.println(stock_info_string);
-                return responseSuccess(JSONArray.fromObject(stock_info_string));
-            }
-
             InputStream URLStream = openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream, "UTF-8"));
 
@@ -175,11 +158,11 @@ public class TWSEService {
             }
 
             if (type.equals("1")) {
-                return StockTradeInfoDaily(all_lines, specific_date, trade_info_redis_key);
+                return listedStockTradeInfoDaily(all_lines, specific_date, stock_id);
             } else if (type.equals("2")) {
-                return StockTradeInfoMonthly(all_lines, specific_date, trade_info_redis_key);
+                return listedStockTradeInfoMonthly(all_lines, specific_date, stock_id);
             } else if (type.equals("3")) {
-                return StockTradeInfoYearly(all_lines, specific_date, trade_info_redis_key);
+                return listedStockTradeInfoYearly(all_lines, specific_date, stock_id);
             }
 
             return responseError("get stock trade info error.");
@@ -188,10 +171,18 @@ public class TWSEService {
         }
     }
 
-    private JSONObject StockTradeInfoDaily(String all_lines, Integer specific_date, String trade_info_redis_key) {
+    private JSONObject listedStockTradeInfoDaily(String all_lines, Integer specific_date, String stock_id) {
         try {
             JSONArray trade_info_array = new JSONArray();
-            int redis_ttl = 86400 * 30; // redis存活30天
+            int redis_ttl = 86400; // redis存活1天
+
+            String trade_info_redis_key = "stock_trade_info_daily_" + specific_date + " : " 
+                    + stock_id;
+            
+            String stock_info_string = this.stringRedisTemplate.opsForValue().get(trade_info_redis_key);
+            if (stock_info_string != null) {
+                return responseSuccess(JSONArray.fromObject(stock_info_string));
+            }
 
             Document doc = Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
@@ -239,16 +230,24 @@ public class TWSEService {
         }
     }
 
-    private JSONObject StockTradeInfoMonthly(String all_lines, Integer specific_month, String trade_info_redis_key) {
+    private JSONObject listedStockTradeInfoMonthly(String all_lines, Integer specific_date, String stock_id) {
         try {
             JSONArray trade_info_array = new JSONArray();
-            int redis_ttl = 86400 * 30; // redis存活30天
+            int redis_ttl = 86400; // redis存活1天
+
+            String trade_info_redis_key = "stock_trade_info_monthly_" + specific_date + " : " 
+                    + stock_id;
+
+            String stock_info_string = this.stringRedisTemplate.opsForValue().get(trade_info_redis_key);
+            if (stock_info_string != null) {
+                return responseSuccess(JSONArray.fromObject(stock_info_string));
+            }
 
             Document doc = Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
 
             int temp_ymd = 0;
-            int specific_yyyymm = Integer.parseInt(specific_month.toString().substring(0, 6));
+            int specific_yyyymm = Integer.parseInt(specific_date.toString().substring(0, 6));
 
             // {年度,月份,最高價,最低價,加權(A/B)平均價,成交筆數,成交金額(A),成交股數(B),週轉率(%)}
             for (int i = trs.size() - 1; i > 1; i--) {
@@ -286,16 +285,24 @@ public class TWSEService {
         }
     }
 
-    private JSONObject StockTradeInfoYearly(String all_lines, Integer specific_year, String trade_info_redis_key) {
+    private JSONObject listedStockTradeInfoYearly(String all_lines, Integer specific_date, String stock_id) {
         try {
             JSONArray trade_info_array = new JSONArray();
             int redis_ttl = 86400 * 30; // redis存活30天
+
+            String trade_info_redis_key = "stock_trade_info_yearly_" + specific_date + " : " 
+                    + stock_id;
+
+            String stock_info_string = this.stringRedisTemplate.opsForValue().get(trade_info_redis_key);
+            if (stock_info_string != null) {
+                return responseSuccess(JSONArray.fromObject(stock_info_string));
+            }
 
             Document doc = Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
 
             int temp_ymd = 0;
-            int specific_yyyy = Integer.parseInt(specific_year.toString().substring(0, 4));
+            int specific_yyyy = Integer.parseInt(specific_date.toString().substring(0, 4));
 
             // {年度,成交股數,成交金額,成交筆數,最高價,日期,最低價,日期,收盤平均價}
             for (int i = trs.size() - 1; i > 1; i--) {

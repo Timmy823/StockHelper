@@ -19,8 +19,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
-import com.example.demo.Component.StockComponent.StockIdParam;
-
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
@@ -70,11 +68,11 @@ public class TWSEService {
         return url_connection.getInputStream();
     }
 
-    public JSONObject getCompanyMonthlyProductRevenueRatio(StockIdParam data) {
+    public JSONObject getCompanyMonthlyProductRevenueRatio(String stock_id) {
         try {
             String[] product_ratio_item = {"name", "ratio", "MoM", "YoY"};
-            String get_product_ratio_redis_key = "monthly_product_revenue_ratio : " + data.getStock_id();
-            int redis_ttl = 86400 * 3 ; // redis存活3天
+            String get_product_ratio_redis_key = "monthly_product_revenue_ratio : " + stock_id;
+            int redis_ttl = 86400;
 
             String product_ratio_string = this.stringRedisTemplate.opsForValue().get(get_product_ratio_redis_key);
             if (product_ratio_string != null) {

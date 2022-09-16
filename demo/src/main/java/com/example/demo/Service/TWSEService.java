@@ -83,8 +83,8 @@ public class TWSEService {
             title_string.add("ETF");
 
             InputStream URLstream = openURL(this.stockUrl);
-
-            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "Big5"));
+            //Big5-HKSCS為BIG5之上擴展的字元集標準，含繁中難字。
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "Big5-HKSCS"));
             String line = null;
             String alllines = "";
             while ((line = buffer.readLine()) != null) {

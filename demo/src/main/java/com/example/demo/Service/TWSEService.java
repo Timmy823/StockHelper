@@ -72,14 +72,19 @@ public class TWSEService {
 
             String company_list_string = this.stringRedisTemplate.opsForValue().get(get_company_list_redis_key);
             if (company_list_string != null) {
-                System.out.println(company_list_string);
                 return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(company_list_string));
             }
 
             JSONArray company_list = new JSONArray();
+            String[] company_data;
+            // get 普通股票 and ETF list.
+            ArrayList<String> title_string = new ArrayList<>();
+            title_string.add("股票");
+            title_string.add("ETF");
 
             InputStream URLstream = openURL(this.stockUrl);
-            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "BIG5"));
+
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "Big5"));
             String line = null;
             String alllines = "";
             while ((line = buffer.readLine()) != null) {
@@ -89,25 +94,34 @@ public class TWSEService {
             Document doc = Jsoup.parse(new String(alllines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
 
-            String company_data[];
+            boolean find_titles = false;
             for (int i = 0; i < trs.size(); i++) {
                 Elements tds = trs.get(i).select("td");
-                JSONObject company = new JSONObject();
-                if (tds.size() == 7) {
-                    // <td bgcolor="#FAFAD2">1101 台泥</td>
-                    company_data = tds.get(0).text().split("　");
-                    // get stock company ID
-                    if (company_data[0].trim().length() == 4) {
-                        company.put("ID", company_data[0].trim());
-                        company.put("Name", company_data[1].trim());
-                        // <td bgcolor="#FAFAD2">1962/02/09</td>
-                        company.put("上市/上櫃日期", tds.get(2).text());
-                        // <td bgcolor="#FAFAD2">水泥工業</td>
-                        company.put("產業別", tds.get(4).text());
-
-                        company_list.add(company);
-                    }
+                //tds.size!=7 為title
+                if (tds.size() != 7) {
+                    find_titles = false;
+                    //若沒取到任何指定列表資訊就繼續找。
+                    if(title_string.contains(tds.text().trim())) 
+                        find_titles = true; 
+                    
+                    continue;
                 }
+                //如果還沒找到任何指定title就略過
+                if(find_titles == false) 
+                    continue;
+
+                JSONObject company = new JSONObject();
+                // <td bgcolor="#FAFAD2">1101 台泥</td>
+                company_data = tds.get(0).text().split("　");
+                // get stock company 
+                company.put("ID", company_data[0].trim());
+                company.put("Name", company_data[1].trim());
+                // <td bgcolor="#FAFAD2">1962/02/09</td>
+                company.put("上市/上櫃日期", tds.get(2).text());
+                // <td bgcolor="#FAFAD2">水泥工業</td>
+                company.put("產業別", tds.get(4).text());
+
+                company_list.add(company);
             }
 
             this.stringRedisTemplate.opsForValue().setIfAbsent(get_company_list_redis_key,

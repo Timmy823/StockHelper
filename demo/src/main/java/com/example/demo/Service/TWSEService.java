@@ -99,11 +99,7 @@ public class TWSEService {
                 Elements tds = trs.get(i).select("td");
                 //tds.size!=7 為title
                 if (tds.size() != 7) {
-                    find_titles = false;
-                    //若沒取到任何指定列表資訊就繼續找。
-                    if(title_string.contains(tds.text().trim())) 
-                        find_titles = true; 
-                    
+                    find_titles = title_string.contains(tds.text().trim());
                     continue;
                 }
                 //如果還沒找到任何指定title就略過

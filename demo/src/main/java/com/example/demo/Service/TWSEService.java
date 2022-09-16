@@ -68,6 +68,94 @@ public class TWSEService {
         return url_connection.getInputStream();
     }
 
+    public JSONObject getCompanyMonthlyProductRevenueRatio(String stock_id) {
+        try {
+            String[] product_ratio_item = {"name", "ratio", "MoM", "YoY"};
+            String get_product_ratio_redis_key = "monthly_product_revenue_ratio : " + stock_id;
+            int redis_ttl = 86400;
+
+            String product_ratio_string = this.stringRedisTemplate.opsForValue().get(get_product_ratio_redis_key);
+            if (product_ratio_string != null) {
+                return  ResponseService.responseJSONArraySuccess(JSONArray.fromObject(product_ratio_string));
+            }
+
+            JSONArray result_Array = new JSONArray();
+            
+            //https connection 
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
+            String line = null;
+            String alllines = "";
+            while ((line = buffer.readLine()) != null) {
+                alllines += line;
+            }
+            Document doc = Jsoup.parse(new String(alllines.getBytes("UTF-8"), "UTF-8"));
+            Elements ratio_columns = doc.select("div#divSaleMonProdData").select("div#divDetail").select("tr[align=center]");
+
+            JSONArray product_array = new JSONArray();
+            JSONObject product_item = new JSONObject();
+            JSONObject revenue = new JSONObject();  
+            for(int i=0; i<ratio_columns.size(); i++) {
+                Elements column = ratio_columns.get(i).select("td");
+                
+                //new monthly revenue
+                if(column.size() == 16) {
+                    //put product_array to revenue
+                    if(product_array.size() != 0) {
+                        revenue.put("detail", product_array);
+                        result_Array.add(revenue);
+                    }
+                    
+                    product_array = new JSONArray();
+                    revenue = new JSONObject();
+                    product_item = new JSONObject(); 
+                    //initail product_item is "-"
+                    product_item.put(product_ratio_item[0], "-");
+                    product_item.put(product_ratio_item[1], "-");
+                    product_item.put(product_ratio_item[2], "-");
+                    product_item.put(product_ratio_item[3], "-");
+                    //put product ratio data into product_item. example:  (1) 晶圓,1065,90.8,-4.76,+14.7
+                    if(column.get(7).text().contains("(")) {
+                        product_item.put(product_ratio_item[0], column.get(8).text());
+                        product_item.put(product_ratio_item[1], column.get(10).text());
+                        product_item.put(product_ratio_item[2], column.get(11).text());
+                        product_item.put(product_ratio_item[3], column.get(12).text());
+                    }
+                    product_array.add(product_item);
+
+                    revenue.put("date", column.get(0).text());
+                }
+                //product ratio for monthly revenue
+                if(column.size() == 9) {
+                    //skip not a product ratio data
+                    if(!column.get(0).text().contains("(") && !column.get(0).text().contains("減"))
+                        continue;
+
+                    product_item = new JSONObject();
+                    product_item.put(product_ratio_item[0], column.get(1).text());
+                    product_item.put(product_ratio_item[1], column.get(3).text());
+                    product_item.put(product_ratio_item[2], column.get(4).text());
+                    product_item.put(product_ratio_item[3], column.get(5).text());
+                    product_array.add(product_item);
+                }
+            }
+
+            //put the final product_array into revenue
+            if(product_array.size() != 0) {
+                revenue.put("detail", product_array);
+                result_Array.add(revenue);
+            }
+
+            this.stringRedisTemplate.opsForValue().setIfAbsent(get_product_ratio_redis_key,
+                    result_Array.toString(), redis_ttl, TimeUnit.SECONDS);
+
+            return ResponseService.responseJSONArraySuccess(result_Array);
+        } catch (IOException io) {
+            return responseError(io.toString());
+        }
+        
+    }
     public JSONObject getCompanyList(int type) {
         try {
             String get_company_list_redis_key = (type == 1) ? "listed_company_list" : "OTC_company_list";

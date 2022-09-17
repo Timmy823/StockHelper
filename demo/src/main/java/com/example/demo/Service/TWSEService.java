@@ -4,15 +4,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -35,37 +29,6 @@ public class TWSEService {
     public TWSEService(String stockUrl, StringRedisTemplate stringRedisTemplate) throws IOException {
         this.stockUrl = stockUrl;
         this.stringRedisTemplate = stringRedisTemplate;
-    }
-
-    private InputStream openURL(String urlPath) throws IOException {
-        URL url = new URL(urlPath);
-        createTrustManager(url);
-
-        // open a url connection.
-        HttpsURLConnection url_connection = (HttpsURLConnection) url.openConnection();
-        url_connection.setDoInput(true);
-        url_connection.setDoOutput(true);
-
-        // set request method
-        url_connection.setRequestMethod("GET");
-        url_connection.setConnectTimeout(15000);
-        url_connection.setReadTimeout(15000);
-        // set request header
-        url_connection.setRequestProperty("User-Agent",
-                " Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36");
-        url_connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        url_connection.setRequestProperty("Content-Length", Integer.toString(1000));
-        url_connection.setRequestProperty("connection", "Keep-Alive");
-
-        System.out.println("ready to connect!");
-
-        url_connection.connect();
-
-        // the method is used to access the header filed after the connection
-        if (url_connection.getResponseCode() != 200) {
-            System.out.print("\nConnection Fail:" + url_connection.getResponseCode());
-        }
-        return url_connection.getInputStream();
     }
 
     public JSONObject getStockEps(String stock_id) {
@@ -122,6 +85,7 @@ public class TWSEService {
 
             this.stringRedisTemplate.opsForValue().setIfAbsent(stock_eps_redis_key,
                     eps_array.toString(), redis_ttl, TimeUnit.SECONDS);
+
             return ResponseService.responseJSONArraySuccess(eps_array);
         } catch (IOException io) {
             return ResponseService.responseError("error", io.toString());
@@ -141,7 +105,9 @@ public class TWSEService {
 
             JSONArray company_list = new JSONArray();
 
-            InputStream URLstream = openURL(this.stockUrl);
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "BIG5"));
             String line = null;
             String alllines = "";
@@ -206,7 +172,9 @@ public class TWSEService {
         items_position.add(20);
 
         try {
-            InputStream URLstream = openURL(this.stockUrl);
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
 
             String line;
@@ -235,6 +203,7 @@ public class TWSEService {
                 if (items_position.contains(i))
                     stock.element(stock_items[count++], split_string[split_string.length - 1].trim());
             }
+
             return ResponseService.responseSuccess(stock);
         } catch (IOException io) {
             return ResponseService.responseError("error", io.toString());
@@ -257,8 +226,10 @@ public class TWSEService {
                     "make_up_dividend_days" };
             JSONArray dividend_info_array = new JSONArray();
 
-            InputStream URLStream = openURL(this.stockUrl);
-            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream, "UTF-8"));
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
 
             String line = null;
             String all_lines = "";
@@ -296,8 +267,10 @@ public class TWSEService {
 
     public JSONObject getListedStockTradeInfo(String type, Integer specific_date, String stock_id) {
         try {
-            InputStream URLStream = openURL(this.stockUrl);
-            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream, "UTF-8"));
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
 
             String line = null;
             String all_lines = "";
@@ -373,6 +346,7 @@ public class TWSEService {
 
                 return ResponseService.responseJSONArraySuccess(trade_info_array);
             }
+
             return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
             return ResponseService.responseError("error", io.toString());
@@ -428,6 +402,7 @@ public class TWSEService {
 
                 return ResponseService.responseJSONArraySuccess(trade_info_array);
             }
+
             return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
             return ResponseService.responseError("error", io.toString());
@@ -483,6 +458,7 @@ public class TWSEService {
 
                 return ResponseService.responseJSONArraySuccess(trade_info_array);
             }
+
             return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
             return ResponseService.responseError("error", io.toString());
@@ -513,7 +489,9 @@ public class TWSEService {
                     "MoM", "YoY", "cumulative_YoY",
                     "revenue_in_same_monthly_last_year", "cumulative_revenue_last_year" };
 
-            InputStream URLstream = openURL(this.stockUrl);
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
             String line = null;
             String alllines = "";
@@ -550,38 +528,5 @@ public class TWSEService {
         } catch (Exception io) {
             return ResponseService.responseError("error", io.toString());
         }
-    }
-
-    /**
-     * 建立ssl憑證
-     * 
-     * @param urlObj
-     * @return
-     */
-    private TrustManager createTrustManager(URL urlObj) {
-        System.setProperty("java.protocol.handler.pkgs", "com.sun.net.ssl.internal.www.protocol");
-        System.setProperty("javax.net.ssl.trustStore", "keystore");
-        TrustManager trust = new X509TrustManager() {
-            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                return null;
-            }
-
-            public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {
-            }
-
-            public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType)
-                    throws java.security.cert.CertificateException {
-            }
-        };
-
-        SSLContext sslcontext;
-        try {
-            sslcontext = SSLContext.getInstance("TLS");
-            sslcontext.init(null, new TrustManager[] { trust }, null);
-            HttpsURLConnection.setDefaultSSLSocketFactory(sslcontext.getSocketFactory());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return trust;
     }
 }

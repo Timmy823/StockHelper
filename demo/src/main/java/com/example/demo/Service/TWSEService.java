@@ -216,7 +216,7 @@ public class TWSEService {
     public JSONObject getCompanyInfoProfile() {
         String[] stock_items = { "main_business", "created_date", "telephone", "stock_date", "fax", "website",
                 "chairman", "email", "president", "share_capital", "share_number", "address", "market_value",
-                "share_hoding_radio" };
+                "share_holding_radio" };
         String split_string[];
         // 紀錄stock_items位置
         int count = 0;

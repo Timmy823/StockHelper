@@ -68,6 +68,83 @@ public class TWSEService {
         return url_connection.getInputStream();
     }
 
+    public JSONObject getStockEps(String stock_id) {
+        try {
+            //check redis
+            String stock_eps_redis_key = "eps : " + stock_id;
+            int redis_ttl = 86400 ; // redis存活1天
+
+            String eps_string = this.stringRedisTemplate.opsForValue().get(stock_eps_redis_key);
+            if (eps_string != null) {
+                return responseSuccess(JSONArray.fromObject(eps_string));
+            }
+
+            JSONArray eps_array = new JSONArray();
+            JSONObject revenue_item = new JSONObject();
+            String[] belong_date;
+            String belong_season = "";
+            //用來將年月對應為季度
+            ArrayList<String> Q1 = new ArrayList<String>();
+            Q1.add("01");
+            Q1.add("02");
+            Q1.add("03");
+            ArrayList<String> Q2 = new ArrayList<String>();
+            Q2.add("04");
+            Q2.add("05");
+            Q2.add("06");
+            ArrayList<String> Q3 = new ArrayList<String>();
+            Q3.add("07");
+            Q3.add("08");
+            Q3.add("09");
+            ArrayList<String> Q4 = new ArrayList<String>();
+            Q4.add("10");
+            Q4.add("11");
+            Q4.add("12");
+
+            //https connection 
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
+            String line = null;
+            String alllines = "";
+            while ((line = buffer.readLine()) != null) {
+                alllines += line;
+            }
+
+            JSONArray revenues = JSONObject.fromObject(alllines)
+                    .getJSONObject("data").getJSONObject("result").getJSONArray("revenues");
+
+            for(int i = 0; i< revenues.size(); i++) {
+                JSONObject eps_item = new JSONObject();
+                revenue_item = revenues.getJSONObject(i);
+                //處理日期時間 置換對應季度
+                belong_date = revenue_item.getString("date").split("-");
+                if (Q1.contains(belong_date[1])) {
+                    belong_season = "Q1";
+                }else if (Q2.contains(belong_date[1])) {
+                    belong_season = "Q2";
+                }else if (Q3.contains(belong_date[1])) {
+                    belong_season = "Q3";
+                }else if (Q4.contains(belong_date[1])){
+                    belong_season = "Q4";
+                }
+
+                eps_item.put("year", belong_date[0]);
+                eps_item.put("season", belong_season);
+                eps_item.put("eps", revenue_item.getString("eps"));
+                eps_item.put("epsQoQ", revenue_item.getString("epsQoQ"));
+                eps_item.put("epsYoY", revenue_item.getString("epsYoY"));
+                eps_array.add(eps_item);
+            }
+            
+            this.stringRedisTemplate.opsForValue().setIfAbsent(stock_eps_redis_key,
+                    eps_array.toString(), redis_ttl, TimeUnit.SECONDS);
+            return ResponseService.responseJSONArraySuccess(eps_array);
+        } catch (IOException io) {
+            return ResponseService.responseError("error", io.toString());
+        }
+    }
+
     public JSONObject getCompanyList(int type) {
         try {
             String get_company_list_redis_key = (type == 1) ? "listed_company_list" : "OTC_company_list";

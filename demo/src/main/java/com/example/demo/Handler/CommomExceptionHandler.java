@@ -14,20 +14,27 @@ import net.minidev.json.JSONObject;
 public class CommomExceptionHandler {
     @ResponseStatus(BAD_REQUEST)
     @ResponseBody
-    @ExceptionHandler(value=MethodArgumentNotValidException.class)
+    @ExceptionHandler(value = MethodArgumentNotValidException.class)
     public JSONObject processValidException(MethodArgumentNotValidException ex)throws Exception{
+        return ResponseBody(ex.getBindingResult().getFieldError().getDefaultMessage());
+    }
+
+    @ExceptionHandler
+    public JSONObject badRequestException(Exception ex) {
+        return ResponseBody(ex.getMessage());
+    }
+
+    private JSONObject ResponseBody(String message) {
         JSONObject data = new JSONObject();
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();
-    
         data.put("data","");
         
         status_code.put("status", "99999");
-        status_code.put("desc", ex.getBindingResult().getFieldError().getDefaultMessage());
+        status_code.put("desc", message);
     
         result.put("metadata", status_code);
         result.put("data", data);
-
         return result;
     }
 }

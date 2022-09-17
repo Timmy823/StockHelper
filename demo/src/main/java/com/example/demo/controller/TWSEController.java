@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import javax.validation.constraints.*;
 
 import net.sf.json.JSONObject;
 
@@ -121,6 +122,25 @@ public class TWSEController {
         try {
             twse = new TWSEService(stockUrl, stringRedisTemplate);
             return twse.getStockEps(stock_id);
+        } catch (IOException io) {
+            io.printStackTrace();
+            return ResponseService.responseError("error", io.toString());
+        }
+    }
+
+    @GetMapping("/twse/getMarginPurchaseAndShortSaleAmount")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject getMarginPurchaseAndShortSaleAmountDaily(TWSEService stock,
+            @RequestParam("stock_id") @NotNull(message = "stock_id can not be null.") @NotEmpty(message = "stock_id can not be empty.") String stock_id,
+
+            @Pattern(regexp = "^(((?:19|20)[0-9]{2})(0?[1-9]|1[012])(0?[1-9]|[12][0-9]|3[01]))$", message = "格式錯誤") @RequestParam("specific_date") String specific_date) {
+
+        String stockUrl = "https://www.twse.com.tw/exchangeReport/MI_MARGN?response=json&date=" + specific_date
+                + "&selectType=ALL";
+        System.out.println(stockUrl);
+        try {
+            stock = new TWSEService(stockUrl, stringRedisTemplate);
+            return stock.getMarginPurchaseAndShortSaleAmountDaily(stock_id, specific_date);
         } catch (IOException io) {
             io.printStackTrace();
             return ResponseService.responseError("error", io.toString());

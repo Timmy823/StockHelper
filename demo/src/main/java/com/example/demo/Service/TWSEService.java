@@ -4,15 +4,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -26,46 +20,76 @@ public class TWSEService {
     private StringRedisTemplate stringRedisTemplate;
 
     private String stockUrl;
-    String[] stock_info_items = { "date", "number", "amount", "openning", "highest", "lowest", "closing", "tradeVolume",
-            "average", "turnoverRate" };
-    String[] stock_index_items = { "period", "dividend", "right",
-            "dividend_date", "right_date", "payment_date", "right_payment_date", "makeup_days" };
+
+    private ArrayList<String> Q1 = new ArrayList<String>(Arrays.asList("01", "02", "03"));
+    private ArrayList<String> Q2 = new ArrayList<String>(Arrays.asList("04", "05", "06"));
+    private ArrayList<String> Q3 = new ArrayList<String>(Arrays.asList("07", "08", "09"));
+    private ArrayList<String> Q4 = new ArrayList<String>(Arrays.asList("10", "11", "12"));
 
     public TWSEService(String stockUrl, StringRedisTemplate stringRedisTemplate) throws IOException {
         this.stockUrl = stockUrl;
         this.stringRedisTemplate = stringRedisTemplate;
     }
 
-    private InputStream openURL(String urlPath) throws IOException {
-        URL url = new URL(urlPath);
-        createTrustManager(url);
+    public JSONObject getStockEps(String stock_id) {
+        try {
+            // check redis
+            String stock_eps_redis_key = "recent_five_years_eps:" + stock_id;
+            int redis_ttl = 86400; // redis存活1天
 
-        // open a url connection.
-        HttpsURLConnection url_connection = (HttpsURLConnection) url.openConnection();
-        url_connection.setDoInput(true);
-        url_connection.setDoOutput(true);
+            String eps_string = this.stringRedisTemplate.opsForValue().get(stock_eps_redis_key);
+            if (eps_string != null) {
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(eps_string));
+            }
 
-        // set request method
-        url_connection.setRequestMethod("GET");
-        url_connection.setConnectTimeout(15000);
-        url_connection.setReadTimeout(15000);
-        // set request header
-        url_connection.setRequestProperty("User-Agent",
-                " Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36");
-        url_connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        url_connection.setRequestProperty("Content-Length", Integer.toString(1000));
-        url_connection.setRequestProperty("connection", "Keep-Alive");
+            JSONArray eps_array = new JSONArray();
+            JSONObject revenue_item = new JSONObject();
+            String[] belong_date;
+            String belong_season = "";
 
-        System.out.println("ready to connect!");
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
+            String line = null;
+            String alllines = "";
+            while ((line = buffer.readLine()) != null) {
+                alllines += line;
+            }
 
-        url_connection.connect();
+            JSONArray revenues = JSONObject.fromObject(alllines)
+                    .getJSONObject("data").getJSONObject("result").getJSONArray("revenues");
 
-        // the method is used to access the header filed after the connection
-        if (url_connection.getResponseCode() != 200) {
-            System.out.print("\nConnection Fail:" + url_connection.getResponseCode());
+            for (int i = 0; i < revenues.size(); i++) {
+                JSONObject eps_item = new JSONObject();
+                revenue_item = revenues.getJSONObject(i);
+                // 處理日期時間 置換對應季度
+                belong_date = revenue_item.getString("date").split("-");
+                if (this.Q1.contains(belong_date[1])) {
+                    belong_season = "Q1";
+                } else if (this.Q2.contains(belong_date[1])) {
+                    belong_season = "Q2";
+                } else if (this.Q3.contains(belong_date[1])) {
+                    belong_season = "Q3";
+                } else if (this.Q4.contains(belong_date[1])) {
+                    belong_season = "Q4";
+                }
+
+                eps_item.put("year", belong_date[0]);
+                eps_item.put("season", belong_season);
+                eps_item.put("eps", revenue_item.getString("eps"));
+                eps_item.put("epsQoQ", revenue_item.getString("epsQoQ"));
+                eps_item.put("epsYoY", revenue_item.getString("epsYoY"));
+                eps_array.add(eps_item);
+            }
+
+            this.stringRedisTemplate.opsForValue().setIfAbsent(stock_eps_redis_key,
+                    eps_array.toString(), redis_ttl, TimeUnit.SECONDS);
+
+            return ResponseService.responseJSONArraySuccess(eps_array);
+        } catch (IOException io) {
+            return ResponseService.responseError("error", io.toString());
         }
-
-        return url_connection.getInputStream();
     }
 
     public JSONObject getMarginPurchaseAndShortSaleAmountDaily(String stock_id, String specified_date) {
@@ -75,19 +99,21 @@ public class TWSEService {
 
             String amount_string = this.stringRedisTemplate.opsForValue().get(redis_key);
             if (amount_string != null) {
-                return responseSuccess(JSONArray.fromObject(amount_string));
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(amount_string));
             }
 
-            String[] item_string = {"buy", "sell", "repayment", "balance_yesterday", "balance", "position_limit"};
-            
+            String[] item_string = { "buy", "sell", "repayment", "balance_yesterday", "balance", "position_limit" };
+
             JSONArray amount_array = new JSONArray();
             JSONObject amount_item = new JSONObject();
             JSONObject margin_purchase_item = new JSONObject();
             JSONObject short_sale_item = new JSONObject();
-            //get data from url.
+            // get data from url.
             JSONArray stock_item = new JSONArray();
 
-            InputStream URLstream = openURL(this.stockUrl);
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
             String line = null;
             String alllines = "";
@@ -95,10 +121,10 @@ public class TWSEService {
                 alllines += line;
             }
             JSONArray data = JSONObject.fromObject(alllines).getJSONArray("data");
-            for (int i=0 ; i<data.size() ; i++) {
+            for (int i = 0; i < data.size(); i++) {
                 stock_item = data.getJSONArray(i);
 
-                if(!stock_item.get(0).equals(stock_id))
+                if (!stock_item.get(0).equals(stock_id))
                     continue;
 
                 margin_purchase_item.put(item_string[0], stock_item.get(2));
@@ -123,11 +149,11 @@ public class TWSEService {
             }
 
             this.stringRedisTemplate.opsForValue().setIfAbsent(redis_key,
-            amount_array.toString(), redis_ttl, TimeUnit.SECONDS);
+                    amount_array.toString(), redis_ttl, TimeUnit.SECONDS);
 
-            return responseSuccess(amount_array);
+            return ResponseService.responseJSONArraySuccess(amount_array);
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -139,12 +165,14 @@ public class TWSEService {
             String company_list_string = this.stringRedisTemplate.opsForValue().get(get_company_list_redis_key);
             if (company_list_string != null) {
                 System.out.println(company_list_string);
-                return responseSuccess(JSONArray.fromObject(company_list_string));
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(company_list_string));
             }
 
             JSONArray company_list = new JSONArray();
 
-            InputStream URLstream = openURL(this.stockUrl);
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "BIG5"));
             String line = null;
             String alllines = "";
@@ -179,9 +207,9 @@ public class TWSEService {
             this.stringRedisTemplate.opsForValue().setIfAbsent(get_company_list_redis_key,
                     company_list.toString(), redis_ttl, TimeUnit.SECONDS);
 
-            return responseSuccess(company_list);
+            return ResponseService.responseJSONArraySuccess(company_list);
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
@@ -209,7 +237,9 @@ public class TWSEService {
         items_position.add(20);
 
         try {
-            InputStream URLstream = openURL(this.stockUrl);
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
 
             String line;
@@ -238,16 +268,33 @@ public class TWSEService {
                 if (items_position.contains(i))
                     stock.element(stock_items[count++], split_string[split_string.length - 1].trim());
             }
-            return responseCompanyProfileSuccess(stock);
+
+            return ResponseService.responseSuccess(stock);
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
-    public JSONObject getCompanyDividendPolicy() {
+    public JSONObject getCompanyDividendPolicy(String stock_id) {
         try {
-            InputStream URLStream = openURL(this.stockUrl);
-            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream, "UTF-8"));
+            String get_company_dividend_redis_key = "company_history_dividend_policy:" + stock_id;
+            int redis_ttl = 86400; // redis存活1天
+
+            String company_dividend_string = this.stringRedisTemplate.opsForValue().get(get_company_dividend_redis_key);
+            if (company_dividend_string != null) {
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(company_dividend_string));
+            }
+
+            // make up dividend days 指的是填息天數。
+            String[] stock_dividend_items = { "dividend_period", "cash_dividend(dollors)", "stock_dividend(shares)",
+                    "EX-dividend_date", "EX-right_date", "dividend_payment_date", "right_payment_date",
+                    "make_up_dividend_days" };
+            JSONArray dividend_info_array = new JSONArray();
+
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
 
             String line = null;
             String all_lines = "";
@@ -256,16 +303,39 @@ public class TWSEService {
                 all_lines += line;
             }
 
-            return CompanyDividendPolicyDataParsing(all_lines);
+            // 只需要取得股利政策的table底下的<li class="List(n)">
+            Document doc = Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
+            Elements li_lists = doc.select("div.table-body-wrapper").get(0).select("li");
+
+            // html div element format ={股利所屬期間,現金股利,股票股利,除息日,除權日,現金股利發放日,股票股利發放,填息天數,股利合計}
+            for (int i = 0; i < li_lists.size(); i++) {
+                // 要取得的八個div element外面包了一層div、第一個element "股利所屬期間" 另外又包了一層div，故加起來有10個div。
+                Elements tds = li_lists.get(i).select("div").get(0).select("div");
+                if (tds.size() != 10)
+                    continue;
+
+                JSONObject stock_ifo = new JSONObject();
+                for (int j = 2; j < tds.size(); j++) {
+                    stock_ifo.element(stock_dividend_items[j - 2], tds.get(j).text());
+                }
+                dividend_info_array.add(stock_ifo);
+            }
+
+            this.stringRedisTemplate.opsForValue().setIfAbsent(get_company_dividend_redis_key,
+                    dividend_info_array.toString(), redis_ttl, TimeUnit.SECONDS);
+
+            return ResponseService.responseJSONArraySuccess(dividend_info_array);
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
-    public JSONObject getStockTradeInfo(String type, Integer specific_date) {
+    public JSONObject getListedStockTradeInfo(String type, Integer specific_date, String stock_id) {
         try {
-            InputStream URLStream = openURL(this.stockUrl);
-            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream, "UTF-8"));
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
 
             String line = null;
             String all_lines = "";
@@ -275,24 +345,30 @@ public class TWSEService {
             }
 
             if (type.equals("1")) {
-                return StockTradeInfoDaily(all_lines, specific_date);
+                return listedStockTradeInfoDaily(all_lines, specific_date, stock_id);
             } else if (type.equals("2")) {
-                return StockTradeInfoMonthly(all_lines, specific_date);
+                return listedStockTradeInfoMonthly(all_lines, specific_date, stock_id);
             } else if (type.equals("3")) {
-                return StockTradeInfoYearly(all_lines, specific_date);
+                return listedStockTradeInfoYearly(all_lines, specific_date, stock_id);
             }
 
-            return responseError("get stock trade info error.");
+            return ResponseService.responseError("error", "get stock trade info error.");
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
-    private JSONObject StockTradeInfoDaily(String all_lines, Integer specific_date) {
+    private JSONObject listedStockTradeInfoDaily(String all_lines, Integer specific_date, String stock_id) {
         try {
-            HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
-            for (int i = 0; i < stock_info_items.length; i++) {
-                stock_map.put(stock_info_items[i], new ArrayList<String>());
+            JSONArray trade_info_array = new JSONArray();
+            int redis_ttl = 86400; // redis存活1天
+
+            String trade_info_redis_key = "stock_trade_info_daily_" + specific_date + ":"
+                    + stock_id;
+
+            String stock_info_string = this.stringRedisTemplate.opsForValue().get(trade_info_redis_key);
+            if (stock_info_string != null) {
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(stock_info_string));
             }
 
             Document doc = Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
@@ -318,37 +394,48 @@ public class TWSEService {
                 if (!(temp_ymd == specific_date))
                     continue;
 
-                stock_map.get("date").add(String.valueOf(temp_ymd));
-                stock_map.get("number").add(tds.get(1).text());
-                stock_map.get("amount").add(tds.get(2).text());
-                stock_map.get("openning").add(tds.get(3).text());
-                stock_map.get("highest").add(tds.get(4).text());
-                stock_map.get("lowest").add(tds.get(5).text());
-                stock_map.get("closing").add(tds.get(6).text());
-                stock_map.get("tradeVolume").add(tds.get(8).text());
-                stock_map.get("turnoverRate").add("");
-                stock_map.get("average").add("");
+                JSONObject trade_info = new JSONObject();
+                trade_info.element("share_number(B)", tds.get(1).text());
+                trade_info.element("share_amount(A)", tds.get(2).text());
+                trade_info.element("trade_volume", tds.get(8).text());
+                trade_info.element("openning_price", tds.get(3).text());
+                trade_info.element("hightest_price", tds.get(4).text());
+                trade_info.element("lowest_price", tds.get(5).text());
+                trade_info.element("closing_price(average)", tds.get(6).text());
+                trade_info.element("the_average_of_ShareAmount(A)_and_ShareNumber(B)", "");
+                trade_info.element("turnover_rate(%)", "");
+                trade_info_array.add(trade_info);
 
-                return responseStockTradeInfoSuccess(stock_map);
+                this.stringRedisTemplate.opsForValue().setIfAbsent(trade_info_redis_key,
+                        trade_info_array.toString(), redis_ttl, TimeUnit.SECONDS);
+
+                return ResponseService.responseJSONArraySuccess(trade_info_array);
             }
-            return responseError("查無符合資料");
+
+            return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
-    private JSONObject StockTradeInfoMonthly(String all_lines, Integer specific_month) {
+    private JSONObject listedStockTradeInfoMonthly(String all_lines, Integer specific_date, String stock_id) {
         try {
-            HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
-            for (int i = 0; i < stock_info_items.length; i++) {
-                stock_map.put(stock_info_items[i], new ArrayList<String>());
+            JSONArray trade_info_array = new JSONArray();
+            int redis_ttl = 86400; // redis存活1天
+
+            String trade_info_redis_key = "stock_trade_info_monthly_" + specific_date.toString().substring(0, 6) + ":"
+                    + stock_id;
+
+            String stock_info_string = this.stringRedisTemplate.opsForValue().get(trade_info_redis_key);
+            if (stock_info_string != null) {
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(stock_info_string));
             }
 
             Document doc = Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
 
             int temp_ymd = 0;
-            int specific_yyyymm = Integer.parseInt(specific_month.toString().substring(0, 6));
+            int specific_yyyymm = Integer.parseInt(specific_date.toString().substring(0, 6));
 
             // {年度,月份,最高價,最低價,加權(A/B)平均價,成交筆數,成交金額(A),成交股數(B),週轉率(%)}
             for (int i = trs.size() - 1; i > 1; i--) {
@@ -363,37 +450,48 @@ public class TWSEService {
                 if (!(temp_ymd == specific_yyyymm))
                     continue;
 
-                stock_map.get("date").add(String.valueOf(temp_ymd));
-                stock_map.get("highest").add(tds.get(2).text());
-                stock_map.get("lowest").add(tds.get(3).text());
-                stock_map.get("average").add(tds.get(4).text());
-                stock_map.get("tradeVolume").add(tds.get(5).text());
-                stock_map.get("amount").add(tds.get(6).text());
-                stock_map.get("number").add(tds.get(7).text());
-                stock_map.get("turnoverRate").add(tds.get(8).text());
-                stock_map.get("closing").add("");
-                stock_map.get("openning").add("");
+                JSONObject trade_info = new JSONObject();
+                trade_info.element("share_number(B)", tds.get(7).text());
+                trade_info.element("share_amount(A)", tds.get(6).text());
+                trade_info.element("trade_volume", tds.get(5).text());
+                trade_info.element("openning_price", "");
+                trade_info.element("hightest_price", tds.get(2).text());
+                trade_info.element("lowest_price", tds.get(3).text());
+                trade_info.element("closing_price(average)", "");
+                trade_info.element("the_average_of_ShareAmount(A)_and_ShareNumber(B)", tds.get(4).text());
+                trade_info.element("turnover_rate(%)", tds.get(8).text());
+                trade_info_array.add(trade_info);
 
-                return responseStockTradeInfoSuccess(stock_map);
+                this.stringRedisTemplate.opsForValue().setIfAbsent(trade_info_redis_key,
+                        trade_info_array.toString(), redis_ttl, TimeUnit.SECONDS);
+
+                return ResponseService.responseJSONArraySuccess(trade_info_array);
             }
-            return responseError("查無符合資料");
+
+            return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
-    private JSONObject StockTradeInfoYearly(String all_lines, Integer specific_year) {
+    private JSONObject listedStockTradeInfoYearly(String all_lines, Integer specific_date, String stock_id) {
         try {
-            HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
-            for (int i = 0; i < stock_info_items.length; i++) {
-                stock_map.put(stock_info_items[i], new ArrayList<String>());
+            JSONArray trade_info_array = new JSONArray();
+            int redis_ttl = 86400 * 30; // redis存活30天
+
+            String trade_info_redis_key = "stock_trade_info_yearly_" + specific_date.toString().substring(0, 4) + ":"
+                    + stock_id;
+
+            String stock_info_string = this.stringRedisTemplate.opsForValue().get(trade_info_redis_key);
+            if (stock_info_string != null) {
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(stock_info_string));
             }
 
             Document doc = Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
 
             int temp_ymd = 0;
-            int specific_yyyy = Integer.parseInt(specific_year.toString().substring(0, 4));
+            int specific_yyyy = Integer.parseInt(specific_date.toString().substring(0, 4));
 
             // {年度,成交股數,成交金額,成交筆數,最高價,日期,最低價,日期,收盤平均價}
             for (int i = trs.size() - 1; i > 1; i--) {
@@ -403,187 +501,97 @@ public class TWSEService {
                     continue;
 
                 temp_ymd = 1911 + Integer.parseInt(tds.get(0).text().trim());
-
                 if (!(temp_ymd == specific_yyyy))
                     continue;
 
-                stock_map.get("date").add(String.valueOf(temp_ymd));
-                stock_map.get("number").add(tds.get(1).text());
-                stock_map.get("amount").add(tds.get(2).text());
-                stock_map.get("openning").add("");
-                stock_map.get("highest").add(tds.get(4).text());
-                stock_map.get("lowest").add(tds.get(6).text());
-                stock_map.get("closing").add("");
-                stock_map.get("tradeVolume").add(tds.get(3).text());
-                stock_map.get("turnoverRate").add("");
-                stock_map.get("average").add(tds.get(8).text());
+                JSONObject trade_info = new JSONObject();
+                trade_info.element("share_number(B)", tds.get(1).text());
+                trade_info.element("share_amount(A)", tds.get(2).text());
+                trade_info.element("trade_volume", tds.get(3).text());
+                trade_info.element("openning_price", "");
+                trade_info.element("hightest_price", tds.get(4).text());
+                trade_info.element("lowest_price", tds.get(6).text());
+                trade_info.element("closing_price(average)", "");
+                trade_info.element("the_average_of_ShareAmount(A)_and_ShareNumber(B)",
+                        tds.get(8).text());
+                trade_info.element("turnover_rate(%)", "");
 
-                return responseStockTradeInfoSuccess(stock_map);
+                trade_info_array.add(trade_info);
+
+                this.stringRedisTemplate.opsForValue().setIfAbsent(trade_info_redis_key,
+                        trade_info_array.toString(), redis_ttl, TimeUnit.SECONDS);
+
+                return ResponseService.responseJSONArraySuccess(trade_info_array);
             }
-            return responseError("查無符合資料");
+
+            return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
-            return responseError(io.toString());
+            return ResponseService.responseError("error", io.toString());
         }
     }
 
-    private JSONObject CompanyDividendPolicyDataParsing(String all_lines) {
+    public JSONObject getCompanyMonthlyRevenue(String stock_id) {
         try {
-            HashMap<String, ArrayList<String>> stock_map = new HashMap<String, ArrayList<String>>();
-            for (int i = 0; i < stock_index_items.length; i++) {
-                stock_map.put(stock_index_items[i], new ArrayList<String>());
+            // check redis
+            String monthly_revenue_redis_key = "monthly_revenue:" + stock_id;
+            int redis_ttl = 86400; // redis存活1天
+
+            String monthly_revenue_string = this.stringRedisTemplate.opsForValue().get(monthly_revenue_redis_key);
+            if (monthly_revenue_string != null) {
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(monthly_revenue_string));
             }
 
-            // 只需要取得股利政策的table底下的<li class="List(n)">
-            Document doc = Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
-            Elements li_lists = doc.select("div.table-body-wrapper").get(0).select("li");
+            // get every revenue data frome URL's revenues array.
+            JSONObject monthly_revenue_item = new JSONObject();
+            // it is response array.
+            JSONArray revenue_array = new JSONArray();
+            // response info put into revenue_array
+            JSONObject revenue_info = new JSONObject();
+            // revene data belong date "2022-08-01T00:00:00+08:00"
+            String[] belong_date;
+            // revene_info key string
+            String[] revenue_string = { "year", "month", "revenue", "cumulative_revenue",
+                    "MoM", "YoY", "cumulative_YoY",
+                    "revenue_in_same_monthly_last_year", "cumulative_revenue_last_year" };
 
-            // html div element format ={股利所屬期間,現金股利,股票股利,除息日,除權日,現金股利發放日,股票股利發放,填息天數,股利合計}
-            for (int i = 0; i < li_lists.size(); i++) {
-                // 要取得的八個div element外面包了一層div、第一個element "股利所屬期間" 另外又包了一層div，故加起來有10個div。
-                Elements tds = li_lists.get(i).select("div").get(0).select("div");
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
+            String line = null;
+            String alllines = "";
+            while ((line = buffer.readLine()) != null) {
+                alllines += line;
+            }
+            JSONArray revenues = JSONObject.fromObject(alllines)
+                    .getJSONObject("data").getJSONObject("result").getJSONArray("revenues");
 
-                if (tds.size() != 10)
-                    continue;
+            for (int i = 0; i < revenues.size(); i++) {
+                monthly_revenue_item = revenues.getJSONObject(i);
+                revenue_info = new JSONObject();
+                // get revenue belong year and month
+                belong_date = monthly_revenue_item.getString("date").split("-");
 
-                for (int j = 2; j < tds.size(); j++) {
-                    stock_map.get(stock_index_items[j - 2]).add(tds.get(j).text());
-                }
+                revenue_info.put(revenue_string[0], belong_date[0]);
+                revenue_info.put(revenue_string[1], belong_date[1]);
+                revenue_info.put(revenue_string[2], monthly_revenue_item.getString("revenue"));
+                revenue_info.put(revenue_string[3], monthly_revenue_item.getString("revenueAcc"));
+                revenue_info.put(revenue_string[4], monthly_revenue_item.getString("revenueMoM"));
+                revenue_info.put(revenue_string[5], monthly_revenue_item.getString("revenueYoY"));
+                revenue_info.put(revenue_string[6], monthly_revenue_item.getString("revenueYoYAcc"));
+                revenue_info.put(revenue_string[7],
+                        monthly_revenue_item.getJSONObject("lastYear").getString("revenue"));
+                revenue_info.put(revenue_string[8],
+                        monthly_revenue_item.getJSONObject("lastYear").getString("revenueYoYAcc"));
+                revenue_array.add(revenue_info);
             }
 
-            return responseCompanyDividendPolicySuccess(stock_map);
-        } catch (IOException io) {
-            return responseError(io.toString());
+            this.stringRedisTemplate.opsForValue().setIfAbsent(monthly_revenue_redis_key,
+                    revenue_array.toString(), redis_ttl, TimeUnit.SECONDS);
+
+            return ResponseService.responseJSONArraySuccess(revenue_array);
+        } catch (Exception io) {
+            return ResponseService.responseError("error", io.toString());
         }
-    }
-
-    /**
-     * 建立ssl憑證
-     * 
-     * @param urlObj
-     * @return
-     */
-    private TrustManager createTrustManager(URL urlObj) {
-        System.setProperty("java.protocol.handler.pkgs", "com.sun.net.ssl.internal.www.protocol");
-        System.setProperty("javax.net.ssl.trustStore", "keystore");
-        TrustManager trust = new X509TrustManager() {
-            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                return null;
-            }
-
-            public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {
-            }
-
-            public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType)
-                    throws java.security.cert.CertificateException {
-            }
-        };
-
-        SSLContext sslcontext;
-        try {
-            sslcontext = SSLContext.getInstance("TLS");
-            sslcontext.init(null, new TrustManager[] { trust }, null);
-            HttpsURLConnection.setDefaultSSLSocketFactory(sslcontext.getSocketFactory());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return trust;
-    }
-
-    private JSONObject responseSuccess(JSONArray json_array_data) {
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-
-        status_code.put("status", "success");
-        status_code.put("desc", "");
-
-        result.put("metadata", status_code);
-        result.put("data", json_array_data);
-
-        return result;
-    }
-
-    private JSONObject responseCompanyProfileSuccess(JSONObject data) {
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-
-        status_code.put("status", "success");
-        status_code.put("desc", "");
-
-        result.put("metadata", status_code);
-        result.put("data", data);
-        return result;
-    }
-
-    private JSONObject responseCompanyDividendPolicySuccess(HashMap<String, ArrayList<String>> stock_map) {
-        JSONArray allstockArray = new JSONArray();
-        JSONObject data = new JSONObject();
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-        // make up dividend days 指的是填息天數。
-        String[] request_key = { "dividend_period", "cash_dividend(dollors)", "stock_dividend(shares)",
-                "EX-dividend_date", "EX-right_date", "dividend_payment_date", "right_payment_date",
-                "make_up_dividend_days" };
-
-        for (int i = 0; i < stock_map.get(stock_index_items[0]).size(); i++) {
-            JSONObject tempstock = new JSONObject();
-            for (int j = 0; j < request_key.length; j++) {
-                tempstock.element(request_key[j], stock_map.get(stock_index_items[j]).get(i));
-            }
-            allstockArray.add(tempstock);
-        }
-        data.put("stockdata", allstockArray);
-
-        status_code.put("status", "success");
-        status_code.put("desc", "");
-
-        result.put("metadata", status_code);
-        result.put("data", data);
-        return result;
-    }
-
-    private JSONObject responseStockTradeInfoSuccess(HashMap<String, ArrayList<String>> stock_map) {
-        JSONArray allstockArray = new JSONArray();
-        JSONObject data = new JSONObject();
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-
-        for (int i = 0; i < stock_map.get("date").size(); i++) {
-            JSONObject tempstock = new JSONObject();
-            tempstock.element("share_number(B)", stock_map.get("number").get(i));
-            tempstock.element("share_amount(A)", stock_map.get("amount").get(i));
-            tempstock.element("trade_volume", stock_map.get("tradeVolume").get(i));
-            tempstock.element("openning_price", stock_map.get("openning").get(i));
-            tempstock.element("hightest_price", stock_map.get("highest").get(i));
-            tempstock.element("lowest_price", stock_map.get("lowest").get(i));
-            tempstock.element("closing_price(average)", stock_map.get("closing").get(i));
-            tempstock.element("the_average_of_ShareAmount(A)_and_ShareNumber(B)", stock_map.get("average").get(i));
-            tempstock.element("turnover_rate(%)", stock_map.get("turnoverRate").get(i));
-
-            allstockArray.add(tempstock);
-        }
-        data.put("stockdata", allstockArray);
-
-        status_code.put("status", "success");
-        status_code.put("desc", "");
-
-        result.put("metadata", status_code);
-        result.put("data", data);
-
-        return result;
-    }
-
-    public JSONObject responseError(String error_msg) {
-        JSONObject data = new JSONObject();
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-
-        data.put("data", "");
-
-        status_code.put("status", "error");
-        status_code.put("desc", error_msg);
-
-        result.put("metadata", status_code);
-        result.put("data", data);
-        return result;
     }
 }

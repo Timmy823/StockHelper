@@ -61,7 +61,6 @@ public class TWSEService {
         if (url_connection.getResponseCode() != 200) {
             System.out.print("\nConnection Fail:" + url_connection.getResponseCode());
         }
-
         return url_connection.getInputStream();
     }
 
@@ -422,6 +421,69 @@ public class TWSEService {
             }
             return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
+            return ResponseService.responseError("error", io.toString());
+        }
+    }
+
+    public JSONObject getCompanyMonthlyRevenue(String stock_id) {
+        try {
+            // check redis
+            String monthly_revenue_redis_key = "monthly_revenue : " + stock_id;
+            int redis_ttl = 86400 * 1; // redis存活1天
+
+            String monthly_revenue_string = this.stringRedisTemplate.opsForValue().get(monthly_revenue_redis_key);
+            if (monthly_revenue_string != null) {
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(monthly_revenue_string));
+            }
+
+            // get every revenue data frome URL's revenues array.
+            JSONObject monthly_revenue_item = new JSONObject();
+            // it is response array.
+            JSONArray revenue_array = new JSONArray();
+            // response info put into revenue_array
+            JSONObject revenue_info = new JSONObject();
+            // revene data belong date "2022-08-01T00:00:00+08:00"
+            String[] belong_date;
+            // revene_info key string
+            String[] revenue_string = { "year", "month", "revenue", "cumulative_revenue",
+                    "MoM", "YoY", "cumulative_YoY",
+                    "revenue_in_same_monthly_last_year", "cumulative_revenue_last_year" };
+
+            InputStream URLstream = openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
+            String line = null;
+            String alllines = "";
+            while ((line = buffer.readLine()) != null) {
+                alllines += line;
+            }
+            JSONArray revenues = JSONObject.fromObject(alllines)
+                    .getJSONObject("data").getJSONObject("result").getJSONArray("revenues");
+
+            for (int i = 0; i < revenues.size(); i++) {
+                monthly_revenue_item = revenues.getJSONObject(i);
+                revenue_info = new JSONObject();
+                // get revenue belong year and month
+                belong_date = monthly_revenue_item.getString("date").split("-");
+
+                revenue_info.put(revenue_string[0], belong_date[0]);
+                revenue_info.put(revenue_string[1], belong_date[1]);
+                revenue_info.put(revenue_string[2], monthly_revenue_item.getString("revenue"));
+                revenue_info.put(revenue_string[3], monthly_revenue_item.getString("revenueAcc"));
+                revenue_info.put(revenue_string[4], monthly_revenue_item.getString("revenueMoM"));
+                revenue_info.put(revenue_string[5], monthly_revenue_item.getString("revenueYoY"));
+                revenue_info.put(revenue_string[6], monthly_revenue_item.getString("revenueYoYAcc"));
+                revenue_info.put(revenue_string[7],
+                        monthly_revenue_item.getJSONObject("lastYear").getString("revenue"));
+                revenue_info.put(revenue_string[8],
+                        monthly_revenue_item.getJSONObject("lastYear").getString("revenueYoYAcc"));
+                revenue_array.add(revenue_info);
+            }
+
+            this.stringRedisTemplate.opsForValue().setIfAbsent(monthly_revenue_redis_key,
+                    revenue_array.toString(), redis_ttl, TimeUnit.SECONDS);
+
+            return ResponseService.responseJSONArraySuccess(revenue_array);
+        } catch (Exception io) {
             return ResponseService.responseError("error", io.toString());
         }
     }

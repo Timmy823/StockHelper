@@ -94,4 +94,20 @@ public class TWSEController {
             return ResponseService.responseError("error", io.toString());
         }
     }
+
+    @GetMapping("/twse/getCompanyMonthlyRevenue")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject getCompanyMonthlyRevenue(TWSEService twse,
+            @RequestParam("stock_id") @NotEmpty(message = "it can not be empty.") String stock_id) {
+        String stockUrl = "https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.revenues;period=month;symbol="
+                + stock_id;
+
+        try {
+            twse = new TWSEService(stockUrl, stringRedisTemplate);
+            return twse.getCompanyMonthlyRevenue(stock_id);
+        } catch (IOException io) {
+            io.printStackTrace();
+            return ResponseService.responseError("error", io.toString());
+        }
+    }
 }

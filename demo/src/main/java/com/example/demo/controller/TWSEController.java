@@ -2,7 +2,8 @@ package com.example.demo.Controller;
 
 import java.io.IOException;
 
-import javax.validation.constraints.*;
+import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.Pattern;
 
 import com.example.demo.Component.SpecificValidator;
 import com.example.demo.Service.ResponseService;
@@ -105,6 +106,21 @@ public class TWSEController {
         try {
             twse = new TWSEService(stockUrl, stringRedisTemplate);
             return twse.getCompanyMonthlyRevenue(stock_id);
+        } catch (IOException io) {
+            io.printStackTrace();
+            return ResponseService.responseError("error", io.toString());
+        }
+    }
+
+    @GetMapping("/twse/getStockEps")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject getStockEps(TWSEService twse,
+            @RequestParam("stock_id") @NotEmpty(message = "it can not be empty.") String stock_id) {
+        String stockUrl = "https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.revenues;includedFields=priceAssessment;period=quarter;symbol="
+                + stock_id;
+        try {
+            twse = new TWSEService(stockUrl, stringRedisTemplate);
+            return twse.getStockEps(stock_id);
         } catch (IOException io) {
             io.printStackTrace();
             return ResponseService.responseError("error", io.toString());

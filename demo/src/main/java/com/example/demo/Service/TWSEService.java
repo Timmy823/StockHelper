@@ -4,14 +4,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -25,43 +20,76 @@ public class TWSEService {
     private StringRedisTemplate stringRedisTemplate;
 
     private String stockUrl;
-    String[] stock_info_items = { "date", "number", "amount", "openning", "highest", "lowest", "closing", "tradeVolume",
-            "average", "turnoverRate" };
+
+    private ArrayList<String> Q1 = new ArrayList<String>(Arrays.asList("01", "02", "03"));
+    private ArrayList<String> Q2 = new ArrayList<String>(Arrays.asList("04", "05", "06"));
+    private ArrayList<String> Q3 = new ArrayList<String>(Arrays.asList("07", "08", "09"));
+    private ArrayList<String> Q4 = new ArrayList<String>(Arrays.asList("10", "11", "12"));
 
     public TWSEService(String stockUrl, StringRedisTemplate stringRedisTemplate) throws IOException {
         this.stockUrl = stockUrl;
         this.stringRedisTemplate = stringRedisTemplate;
     }
 
-    private InputStream openURL(String urlPath) throws IOException {
-        URL url = new URL(urlPath);
-        createTrustManager(url);
+    public JSONObject getStockEps(String stock_id) {
+        try {
+            // check redis
+            String stock_eps_redis_key = "recent_five_years_eps:" + stock_id;
+            int redis_ttl = 86400; // redis存活1天
 
-        // open a url connection.
-        HttpsURLConnection url_connection = (HttpsURLConnection) url.openConnection();
-        url_connection.setDoInput(true);
-        url_connection.setDoOutput(true);
+            String eps_string = this.stringRedisTemplate.opsForValue().get(stock_eps_redis_key);
+            if (eps_string != null) {
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(eps_string));
+            }
 
-        // set request method
-        url_connection.setRequestMethod("GET");
-        url_connection.setConnectTimeout(15000);
-        url_connection.setReadTimeout(15000);
-        // set request header
-        url_connection.setRequestProperty("User-Agent",
-                " Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36");
-        url_connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-        url_connection.setRequestProperty("Content-Length", Integer.toString(1000));
-        url_connection.setRequestProperty("connection", "Keep-Alive");
+            JSONArray eps_array = new JSONArray();
+            JSONObject revenue_item = new JSONObject();
+            String[] belong_date;
+            String belong_season = "";
 
-        System.out.println("ready to connect!");
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
+            String line = null;
+            String alllines = "";
+            while ((line = buffer.readLine()) != null) {
+                alllines += line;
+            }
 
-        url_connection.connect();
+            JSONArray revenues = JSONObject.fromObject(alllines)
+                    .getJSONObject("data").getJSONObject("result").getJSONArray("revenues");
 
-        // the method is used to access the header filed after the connection
-        if (url_connection.getResponseCode() != 200) {
-            System.out.print("\nConnection Fail:" + url_connection.getResponseCode());
+            for (int i = 0; i < revenues.size(); i++) {
+                JSONObject eps_item = new JSONObject();
+                revenue_item = revenues.getJSONObject(i);
+                // 處理日期時間 置換對應季度
+                belong_date = revenue_item.getString("date").split("-");
+                if (this.Q1.contains(belong_date[1])) {
+                    belong_season = "Q1";
+                } else if (this.Q2.contains(belong_date[1])) {
+                    belong_season = "Q2";
+                } else if (this.Q3.contains(belong_date[1])) {
+                    belong_season = "Q3";
+                } else if (this.Q4.contains(belong_date[1])) {
+                    belong_season = "Q4";
+                }
+
+                eps_item.put("year", belong_date[0]);
+                eps_item.put("season", belong_season);
+                eps_item.put("eps", revenue_item.getString("eps"));
+                eps_item.put("epsQoQ", revenue_item.getString("epsQoQ"));
+                eps_item.put("epsYoY", revenue_item.getString("epsYoY"));
+                eps_array.add(eps_item);
+            }
+
+            this.stringRedisTemplate.opsForValue().setIfAbsent(stock_eps_redis_key,
+                    eps_array.toString(), redis_ttl, TimeUnit.SECONDS);
+
+            return ResponseService.responseJSONArraySuccess(eps_array);
+        } catch (IOException io) {
+            return ResponseService.responseError("error", io.toString());
         }
-        return url_connection.getInputStream();
     }
 
     public JSONObject getCompanyList(int type) {
@@ -77,7 +105,9 @@ public class TWSEService {
 
             JSONArray company_list = new JSONArray();
 
-            InputStream URLstream = openURL(this.stockUrl);
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "BIG5"));
             String line = null;
             String alllines = "";
@@ -142,7 +172,9 @@ public class TWSEService {
         items_position.add(20);
 
         try {
-            InputStream URLstream = openURL(this.stockUrl);
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
 
             String line;
@@ -171,6 +203,7 @@ public class TWSEService {
                 if (items_position.contains(i))
                     stock.element(stock_items[count++], split_string[split_string.length - 1].trim());
             }
+
             return ResponseService.responseSuccess(stock);
         } catch (IOException io) {
             return ResponseService.responseError("error", io.toString());
@@ -193,8 +226,10 @@ public class TWSEService {
                     "make_up_dividend_days" };
             JSONArray dividend_info_array = new JSONArray();
 
-            InputStream URLStream = openURL(this.stockUrl);
-            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream, "UTF-8"));
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
 
             String line = null;
             String all_lines = "";
@@ -232,8 +267,10 @@ public class TWSEService {
 
     public JSONObject getListedStockTradeInfo(String type, Integer specific_date, String stock_id) {
         try {
-            InputStream URLStream = openURL(this.stockUrl);
-            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLStream, "UTF-8"));
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
 
             String line = null;
             String all_lines = "";
@@ -309,6 +346,7 @@ public class TWSEService {
 
                 return ResponseService.responseJSONArraySuccess(trade_info_array);
             }
+
             return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
             return ResponseService.responseError("error", io.toString());
@@ -364,6 +402,7 @@ public class TWSEService {
 
                 return ResponseService.responseJSONArraySuccess(trade_info_array);
             }
+
             return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
             return ResponseService.responseError("error", io.toString());
@@ -419,6 +458,7 @@ public class TWSEService {
 
                 return ResponseService.responseJSONArraySuccess(trade_info_array);
             }
+
             return ResponseService.responseError("error", "查無符合資料");
         } catch (IOException io) {
             return ResponseService.responseError("error", io.toString());
@@ -428,8 +468,8 @@ public class TWSEService {
     public JSONObject getCompanyMonthlyRevenue(String stock_id) {
         try {
             // check redis
-            String monthly_revenue_redis_key = "monthly_revenue : " + stock_id;
-            int redis_ttl = 86400 * 1; // redis存活1天
+            String monthly_revenue_redis_key = "monthly_revenue:" + stock_id;
+            int redis_ttl = 86400; // redis存活1天
 
             String monthly_revenue_string = this.stringRedisTemplate.opsForValue().get(monthly_revenue_redis_key);
             if (monthly_revenue_string != null) {
@@ -449,7 +489,9 @@ public class TWSEService {
                     "MoM", "YoY", "cumulative_YoY",
                     "revenue_in_same_monthly_last_year", "cumulative_revenue_last_year" };
 
-            InputStream URLstream = openURL(this.stockUrl);
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
             String line = null;
             String alllines = "";
@@ -486,38 +528,5 @@ public class TWSEService {
         } catch (Exception io) {
             return ResponseService.responseError("error", io.toString());
         }
-    }
-
-    /**
-     * 建立ssl憑證
-     * 
-     * @param urlObj
-     * @return
-     */
-    private TrustManager createTrustManager(URL urlObj) {
-        System.setProperty("java.protocol.handler.pkgs", "com.sun.net.ssl.internal.www.protocol");
-        System.setProperty("javax.net.ssl.trustStore", "keystore");
-        TrustManager trust = new X509TrustManager() {
-            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-                return null;
-            }
-
-            public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {
-            }
-
-            public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType)
-                    throws java.security.cert.CertificateException {
-            }
-        };
-
-        SSLContext sslcontext;
-        try {
-            sslcontext = SSLContext.getInstance("TLS");
-            sslcontext.init(null, new TrustManager[] { trust }, null);
-            HttpsURLConnection.setDefaultSSLSocketFactory(sslcontext.getSocketFactory());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return trust;
     }
 }

@@ -59,7 +59,7 @@ public class TWSEController {
     @CrossOrigin(origins = "*", allowedHeaders = "*")
     public JSONObject getCompanyDividendPolicy(TWSEService company,
             @RequestParam("stock_id") @NotEmpty(message = "it can not be empty.") String stock_id) {
-        String stockUrl = "https://tw.stock.yahoo.com/quote/" + stock_id + "/dividend";
+        String stockUrl = "https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.dividends;action=combineCashAndStock;limit=500;sortBy=-date;symbol=" + stock_id ;
         try {
             company = new TWSEService(stockUrl, stringRedisTemplate);
             return company.getCompanyDividendPolicy(stock_id);

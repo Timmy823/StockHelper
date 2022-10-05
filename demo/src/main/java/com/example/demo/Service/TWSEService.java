@@ -4,8 +4,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import org.jsoup.Jsoup;
@@ -286,12 +289,17 @@ public class TWSEService {
                 return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(company_dividend_string));
             }
 
-            // make up dividend days 指的是填息天數。
-            String[] stock_dividend_items = { "dividend_period", "cash_dividend(dollors)", "stock_dividend(shares)",
-                    "EX-dividend_date", "EX-right_date", "dividend_payment_date", "right_payment_date",
-                    "make_up_dividend_days" };
+            //reponse 
             JSONArray dividend_info_array = new JSONArray();
+            JSONObject dividend_info = new JSONObject();
+            //get json
+            JSONObject dividend_detail = new JSONObject();
+            JSONObject detail_item;
 
+            SimpleDateFormat inputFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.TAIWAN);
+            SimpleDateFormat outputFormatter = new SimpleDateFormat("yyyy/MM/dd");
+            String dividend_detail_string ;
+            
             // https connection
             HttpsService open_url = new HttpsService();
             InputStream URLstream = open_url.openURL(this.stockUrl);
@@ -304,29 +312,62 @@ public class TWSEService {
                 all_lines += line;
             }
 
-            // 只需要取得股利政策的table底下的<li class="List(n)">
-            Document doc = Jsoup.parse(new String(all_lines.getBytes("UTF-8"), "UTF-8"));
-            Elements li_lists = doc.select("div.table-body-wrapper").get(0).select("li");
-
-            // html div element format ={股利所屬期間,現金股利,股票股利,除息日,除權日,現金股利發放日,股票股利發放,填息天數,股利合計}
-            for (int i = 0; i < li_lists.size(); i++) {
-                // 要取得的八個div element外面包了一層div、第一個element "股利所屬期間" 另外又包了一層div，故加起來有10個div。
-                Elements tds = li_lists.get(i).select("div").get(0).select("div");
-                if (tds.size() != 10)
-                    continue;
-
-                JSONObject stock_ifo = new JSONObject();
-                for (int j = 2; j < tds.size(); j++) {
-                    stock_ifo.element(stock_dividend_items[j - 2], tds.get(j).text());
+            JSONArray dividend_array = JSONObject.fromObject(all_lines).getJSONArray("dividends");
+            for (int i=0 ; i<dividend_array.size() ; i++) {
+                dividend_detail = dividend_array.getJSONObject(i);
+                
+                //initail dividend info 
+                // make up dividend days 指的是填息天數。
+                dividend_info = new JSONObject();
+                dividend_info.put("year", dividend_detail.getString("year"));
+                dividend_info.put("period", dividend_detail.getString("period"));
+                dividend_info.put("make_up_dividend_days", "");
+                dividend_info.put("cash_dividend", "0");
+                dividend_info.put("EX-dividend_date", "");
+                dividend_info.put("dividend_payment_date", "");
+                dividend_info.put("stock_dividend", "0");
+                dividend_info.put("EX-right_date", "");
+                dividend_info.put("right_payment_date", "");
+                
+                //cash dividend
+                if (!dividend_detail.get("exDividend").equals(null)) {
+                    detail_item = dividend_detail.getJSONObject("exDividend");
+                    dividend_info.put("make_up_dividend_days", (dividend_detail_string = 
+                            detail_item.get("recoveryDays").toString()).equals("null") ? 
+                            "" : dividend_detail_string);
+                    dividend_info.put("cash_dividend", (dividend_detail_string = 
+                            detail_item.getString("cash")).equals("-") ? 
+                            "0" : detail_item.getString("cash"));
+                    dividend_info.put("EX-dividend_date", (dividend_detail_string = 
+                            detail_item.get("date").toString()).equals("null") ?  
+                            "" : outputFormatter.format(inputFormatter.parse(dividend_detail_string)));
+                    dividend_info.put("dividend_payment_date", (dividend_detail_string = 
+                            detail_item.get("cashPayDate").toString()).equals("null") ? 
+                            "" : outputFormatter.format(inputFormatter.parse(dividend_detail_string)));
                 }
-                dividend_info_array.add(stock_ifo);
+                //right dividend
+                if (!dividend_detail.get("exRight").equals(null)) {
+                    detail_item = dividend_detail.getJSONObject("exRight");
+                    dividend_info.put("stock_dividend", (dividend_detail_string = 
+                            detail_item.getString("stock")).equals("-") ? 
+                            "0" : detail_item.getString("stock"));
+                    dividend_info.put("EX-right_date", (dividend_detail_string = 
+                            detail_item.get("date").toString()).equals("null") ?  
+                            "" : outputFormatter.format(inputFormatter.parse(dividend_detail_string)));
+                    dividend_info.put("right_payment_date", (dividend_detail_string = 
+                            detail_item.get("stockPayDate").toString()).equals("null") ? 
+                            "" : outputFormatter.format(inputFormatter.parse(dividend_detail_string)));
+                }
+                dividend_info_array.add(dividend_info);
             }
-
+            
             this.stringRedisTemplate.opsForValue().setIfAbsent(get_company_dividend_redis_key,
                     dividend_info_array.toString(), redis_ttl, TimeUnit.SECONDS);
 
             return ResponseService.responseJSONArraySuccess(dividend_info_array);
         } catch (IOException io) {
+            return ResponseService.responseError("error", io.toString());
+        } catch (ParseException io) {
             return ResponseService.responseError("error", io.toString());
         }
     }

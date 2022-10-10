@@ -10,13 +10,12 @@ import lombok.Data;
 @Data
 public class FavoriteListStockDeleteParam {
     @NotNull(message = "member_account不可為null")
-    @NotEmpty(message = "member_account不可為空")
     @Email(message = "必須email格式")
     private String account;
 
     @NotNull(message = "favorite_list_name不可為null")
     @NotEmpty(message = "favorite_list_name不可為空")
-    @Size(max = 50, message="favorite_list_name最長50")
+    @Size(max = 50, message = "favorite_list_name最長50")
     private String list_name;
 
     @NotNull(message = "stock_id不可為null")

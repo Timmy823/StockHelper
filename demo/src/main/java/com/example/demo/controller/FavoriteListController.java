@@ -22,7 +22,6 @@ import net.sf.json.JSONObject;
 @RestController
 @Validated
 public class FavoriteListController {
-
     private StringRedisTemplate stringRedisTemplate;
 
     @Autowired
@@ -30,10 +29,8 @@ public class FavoriteListController {
 
     @CrossOrigin(origins = "*", allowedHeaders = "*")
     @GetMapping("/favorite_list/getFavoriteList")
-    public JSONObject getFavoriteList (
-            @RequestParam("member_account")
-            @NotEmpty(message = "it can not be empty.")
-            String member_account) {
+    public JSONObject getFavoriteList(
+            @RequestParam("member_account") @NotEmpty(message = "it can not be empty.") String member_account) {
         try {
             return favoriteListService.getFavoriteList(member_account);
         } catch (Exception io) {

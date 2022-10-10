@@ -2,17 +2,17 @@ package com.example.demo.Service;
 
 import java.util.ArrayList;
 import java.util.Properties;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import com.example.demo.Component.GetMemberInfoParam;
 import com.example.demo.Component.MemberRegisterParam;
 import com.example.demo.Component.MemberUpdateParam;
-import com.example.demo.Component.MemberComponent.FavoriteListDetailParam;
-import com.example.demo.Component.MemberComponent.FavoriteListNameParam;
-import com.example.demo.Component.MemberComponent.FavoriteListStockCommentParam;
-import com.example.demo.Component.MemberComponent.FavoriteListStockDeleteParam;
-import com.example.demo.Component.MemberComponent.UpdateFavoriteListNameParam;
+import com.example.demo.Component.SendEmailParam;
+import com.example.demo.Component.FavoriteListComponent.FavoriteListDetailParam;
+import com.example.demo.Component.FavoriteListComponent.FavoriteListNameParam;
+import com.example.demo.Component.FavoriteListComponent.FavoriteListStockCommentParam;
+import com.example.demo.Component.FavoriteListComponent.FavoriteListStockDeleteParam;
+import com.example.demo.Component.FavoriteListComponent.UpdateFavoriteListNameParam;
 import com.example.demo.Entity.FavoriteListDetailModel;
 import com.example.demo.Entity.FavoriteListNameModel;
 import com.example.demo.Entity.LoginLogModel;
@@ -62,13 +62,13 @@ public class MemberService {
 
         // Check member exists, and get member_id.
         if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
-            return responseError("會員帳號尚未建立");
+            return ResponseService.responseError("error", "會員帳號尚未建立");
         }
 
         // get old list name info.
         list_names = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
         if (list_names.size() == 0 || !list_names.get(0).getStatus().equals("0")) {
-            return responseError("會員帳號名下查無清單 \"" + data.getList_name() + "\"");
+            return ResponseService.responseError("error", "會員帳號名下查無清單 \"" + data.getList_name() + "\"");
         }
 
         new_list_names = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getNew_list_name());
@@ -76,11 +76,11 @@ public class MemberService {
         if (new_list_names.size() == 0) {
             list_names.get(0).setFavorite_list_name(data.getNew_list_name());
             ListNameRepo.save(list_names.get(0));
-            return responseSuccess();
+            return ResponseService.responseSuccess(new JSONObject());
         }
 
         if (new_list_names.get(0).getStatus().equals("0"))
-            return responseError("會員帳號已創建同清單 \"" + data.getNew_list_name() + "\"");
+            return ResponseService.responseError("error", "會員帳號已創建同清單 \"" + data.getNew_list_name() + "\"");
 
         // if new list is invalid and old list exists, new list update to valid and old
         // list valid stock info insert into new stock info.
@@ -117,13 +117,13 @@ public class MemberService {
 
         new_list_names.get(0).setStatus("0");
         ListNameRepo.save(new_list_names.get(0));
-        return responseSuccess();
+        return ResponseService.responseSuccess(new JSONObject());
     }
 
     public JSONObject createMember(MemberRegisterParam data) {
         // 檢核會員帳號是否存在
         if ((MemberRepo.FindByAccount(data.getAccount())) != null) {
-            return responseError("會員帳號已創建");
+            return ResponseService.responseError("error", "會員帳號已創建");
         }
 
         // add member data
@@ -137,14 +137,14 @@ public class MemberService {
         memberModel.setUpdate_user("system");
         MemberRepo.save(memberModel);
 
-        return responseSuccess();
+        return ResponseService.responseSuccess(new JSONObject());
     }
 
     public JSONObject updateMember(MemberUpdateParam data) {
         // 檢核會員帳號是否存在
         MemberModel member = MemberRepo.FindByAccount(data.getAccount());
         if (member == null) {
-            return responseError("會員帳號或密碼錯誤");
+            return ResponseService.responseError("error", "會員帳號或密碼錯誤");
         }
 
         // if input field not null ,and update member field
@@ -159,7 +159,7 @@ public class MemberService {
         member.setUpdate_user("system");
         MemberRepo.save(member);
 
-        return responseSuccess();
+        return ResponseService.responseSuccess(new JSONObject());
     }
 
     public JSONObject getMemberInfo(GetMemberInfoParam data) {
@@ -168,7 +168,7 @@ public class MemberService {
         // 檢核會員帳號是否存在
         MemberModel member = MemberRepo.FindByAccountAndPassword(data.getAccount(), data.getPassword());
         if (member == null) {
-            return responseError("會員帳號或密碼錯誤");
+            return ResponseService.responseError("error", "會員帳號或密碼錯誤");
         }
 
         String get_member_info_redis_key = "member_info:" + data.getAccount();
@@ -183,7 +183,7 @@ public class MemberService {
 
         String member_info_string = this.stringRedisTemplate.opsForValue().get(get_member_info_redis_key);
         if (member_info_string != null) {
-            return responseGetMemberInfoSuccess(JSONObject.fromObject(member_info_string));
+            return ResponseService.responseSuccess(JSONObject.fromObject(member_info_string));
         }
 
         response_data.put("member_account", member.getMember_account());
@@ -196,18 +196,18 @@ public class MemberService {
         this.stringRedisTemplate.opsForValue().setIfAbsent(get_member_info_redis_key,
                 response_data.toString(), redis_ttl, TimeUnit.SECONDS);
 
-        return responseGetMemberInfoSuccess(response_data);
+        return ResponseService.responseSuccess(response_data);
     }
 
-    public JSONObject SendEmailCertification(JSONObject data) {
+    public JSONObject SendEmailCertification(SendEmailParam data) {
         try {
-            String customer_email = data.getString("member_account");
+            String customer_email = data.getAccount();
             // 檢核會員帳號是否存在
             if (MemberRepo.existByAccount(customer_email) == 0)
-                return responseError("查無此會員帳號");
+                return ResponseService.responseError("error", "查無此會員帳號");
 
             // create random 6 numbers and letters
-            String salt_number = getSaltString(6);
+            String salt_number = data.getCertification();
             SimpleMailMessage mail_message = new SimpleMailMessage();
 
             // send email to customer
@@ -217,9 +217,10 @@ public class MemberService {
             mail_message.setText("您好，\n\n您使用的stockhelper驗證碼為 " + salt_number + " 。");
 
             mailSender().send(mail_message);
-            return responseEmailCertification(salt_number);
+
+            return ResponseService.responseSuccess(new JSONObject());
         } catch (MailException e) {
-            return responseError(e.getMessage());
+            return ResponseService.responseError("error", e.getMessage());
         }
     }
 
@@ -231,7 +232,7 @@ public class MemberService {
 
         // Check member exists, and get mid.
         if ((member = MemberRepo.FindByAccount(member_account)) == null) {
-            return responseError("會員帳號尚未建立");
+            return ResponseService.responseError("error", "會員帳號尚未建立");
         }
 
         list_names = ListNameRepo.FindListByMemberId(member.getMid());
@@ -260,7 +261,7 @@ public class MemberService {
             response_data.add(response_item);
         }
 
-        return responseJSONArraySuccess(response_data);
+        return ResponseService.responseJSONArraySuccess(response_data);
     }
 
     public JSONObject addFavoriteListName(FavoriteListNameParam data) {
@@ -269,22 +270,23 @@ public class MemberService {
         FavoriteListNameModel result_list = new FavoriteListNameModel();
         // 檢核會員帳號是否存在
         if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
-            return responseError("查無會員帳號");
+            return ResponseService.responseError("error", "查無會員帳號");
         }
 
         exist_list = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
         if (exist_list.size() > 1) {
-            return responseError("list_name: \"" + data.getList_name() + "\" 重複" + exist_list.size() + "筆");
+            return ResponseService.responseError("error",
+                    "list_name: \"" + data.getList_name() + "\" 重複" + exist_list.size() + "筆");
         }
         if (exist_list.size() == 1) {
             if (exist_list.get(0).getStatus().equals("0")) {
-                return responseError("list_name: \"" + data.getList_name() + "\" 已重複");
+                return ResponseService.responseError("error", "list_name: \"" + data.getList_name() + "\" 已重複");
             }
             // list is exist and status invalid, update list status to valid.
             exist_list.get(0).setStatus("0");
             ListNameRepo.save(exist_list.get(0));
 
-            return responseSuccess();
+            return ResponseService.responseSuccess(new JSONObject());
         }
 
         // insert a new list.
@@ -295,7 +297,7 @@ public class MemberService {
         result_list.setUpdate_user("system");
         ListNameRepo.save(result_list);
 
-        return responseSuccess();
+        return ResponseService.responseSuccess(new JSONObject());
     }
 
     public JSONObject deleteFavoriteListName(FavoriteListNameParam data) {
@@ -305,13 +307,13 @@ public class MemberService {
 
         // check member account exists.
         if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
-            return responseError("查無會員帳號");
+            return ResponseService.responseError("error", "查無會員帳號");
         }
 
         // check list is exists and valid.
         exist_list = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
         if (exist_list.size() == 0 || !exist_list.get(0).getStatus().equals("0"))
-            return responseError("list_name: \"" + data.getList_name() + "\" 尚未創建");
+            return ResponseService.responseError("error", "list_name: \"" + data.getList_name() + "\" 尚未創建");
 
         // update list status into invalid.
         exist_list.get(0).setStatus("1");
@@ -326,7 +328,7 @@ public class MemberService {
             stock_item.setStatus("1");
             ListDetailRepo.save(stock_item);
         }
-        return responseSuccess();
+        return ResponseService.responseSuccess(new JSONObject());
     }
 
     public JSONObject addFavoriteListStock(FavoriteListDetailParam data) {
@@ -337,25 +339,25 @@ public class MemberService {
 
         // 檢核會員帳號是否存在
         if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
-            return responseError("查無會員帳號");
+            return ResponseService.responseError("error", "查無會員帳號");
         }
 
         list_name = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
         if (list_name.size() == 0) {
-            return responseError("查無list_name: \"" + data.getList_name() + "\"無法新增");
+            return ResponseService.responseError("error", "查無list_name: \"" + data.getList_name() + "\"無法新增");
         }
         if (list_name.size() > 1) {
-            return responseError("favorite list name資料異常，重複共" + list_name.size() + "筆");
+            return ResponseService.responseError("error", "favorite list name資料異常，重複共" + list_name.size() + "筆");
         }
 
         list_datail = ListDetailRepo.FindListStockInfoByListNameIdAndStock(list_name.get(0).getList_name_id(),
                 data.getStock_id());
         if (list_datail.size() > 1) {
-            return responseError("stock id資料異常，重複共" + list_datail.size() + "筆");
+            return ResponseService.responseError("error", " stock id資料異常，重複共" + list_datail.size() + "筆");
         }
         if (list_datail.size() != 0) {
             if (list_datail.get(0).getStatus().equals("0")) {
-                return responseError("資料已創建");
+                return ResponseService.responseError("error", " 資料已創建");
             }
             // list is exist and status invalid, update list status to valid.
             if (!list_name.get(0).getStatus().equals("0")) {
@@ -364,7 +366,7 @@ public class MemberService {
             }
             list_datail.get(0).setStatus("0");
             ListDetailRepo.save(list_datail.get(0));
-            return responseSuccess();
+            return ResponseService.responseSuccess(new JSONObject());
         }
 
         result_datail.setList_name_id(list_name.get(0).getList_name_id());
@@ -377,7 +379,7 @@ public class MemberService {
 
         ListDetailRepo.save(result_datail);
 
-        return responseSuccess();
+        return ResponseService.responseSuccess(new JSONObject());
     }
 
     public JSONObject deleteFavoriteListStock(FavoriteListStockDeleteParam data) {
@@ -387,32 +389,32 @@ public class MemberService {
 
         // check member account exists.
         if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
-            return responseError("查無會員帳號");
+            return ResponseService.responseError("error", " 查無會員帳號");
         }
         // check list is exists and get list_name_id.
         exist_list = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
         if (exist_list.size() == 0) {
-            return responseError("list_name: \"" + data.getList_name() + "\" 尚未創建");
+            return ResponseService.responseError("error", " list_name: \"" + data.getList_name() + "\" 尚未創建");
         }
         if (exist_list.size() > 1) {
-            return responseError("list_name資料異常，重複共" + exist_list.size());
+            return ResponseService.responseError("error", " list_name資料異常，重複共" + exist_list.size());
         }
 
         // get stock_list info
         stock_list = ListDetailRepo.FindListStockInfoByListNameIdAndStock(exist_list.get(0).getList_name_id(),
                 data.getStock_id());
         if (stock_list.size() > 1) {
-            return responseError("stock_id資料異常，重複共" + stock_list.size() + "筆");
+            return ResponseService.responseError("error", " stock_id資料異常，重複共" + stock_list.size() + "筆");
         }
         if (stock_list.size() == 0 || !stock_list.get(0).getStatus().equals("0")) {
-            return responseError("list中查無此stock_id");
+            return ResponseService.responseError("error", " list中查無此stock_id");
         }
 
         // update valid stock_list into invalid.
         stock_list.get(0).setStatus("1");
         ListDetailRepo.save(stock_list.get(0));
 
-        return responseSuccess();
+        return ResponseService.responseSuccess(new JSONObject());
     }
 
     public JSONObject updateFavoriteListStockComment(FavoriteListStockCommentParam data) {
@@ -422,7 +424,7 @@ public class MemberService {
 
         // check member account exists.
         if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
-            return responseError("查無會員帳號");
+            return ResponseService.responseError("error", " 查無會員帳號");
         }
         // check list is exists and get each list_name_id.
         exist_lists = ListNameRepo.FindListByMemberId(member.getMid());
@@ -436,15 +438,13 @@ public class MemberService {
                 continue;
 
             if (stock_list.get(0).getComment().equals(data.getStock_comment())) {
-                return responseSuccess();
+                return ResponseService.responseSuccess(new JSONObject());
             }
             // update stock comments.
             stock_list.get(0).setComment(data.getStock_comment());
-            ;
             ListDetailRepo.save(stock_list.get(0));
         }
-
-        return responseSuccess();
+        return ResponseService.responseSuccess(new JSONObject());
     }
 
     @Bean
@@ -463,86 +463,5 @@ public class MemberService {
         properties.put("mail.smtp.starttls.required", "true");
         javaMailSender.setJavaMailProperties(properties);
         return javaMailSender;
-    }
-
-    private String getSaltString(int len) {
-        String SALTCHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-        StringBuilder salt = new StringBuilder(len);
-        Random number = new Random();
-        while (salt.length() < len) { // length of the random string.
-            salt.append(SALTCHARS.charAt(number.nextInt(SALTCHARS.length())));
-        }
-        return salt.toString();
-    }
-
-    private JSONObject responseSuccess() {
-        JSONObject data = new JSONObject();
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-
-        status_code.put("status", "success");
-        status_code.put("desc", "");
-
-        result.put("metadata", status_code);
-        result.put("data", data);
-
-        return result;
-    }
-
-    private JSONObject responseGetMemberInfoSuccess(JSONObject data) {
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-
-        status_code.put("status", "success");
-        status_code.put("desc", "");
-
-        result.put("metadata", status_code);
-        result.put("data", data);
-
-        return result;
-    }
-
-    private JSONObject responseJSONArraySuccess(JSONArray data) {
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-
-        status_code.put("status", "success");
-        status_code.put("desc", "");
-
-        result.put("metadata", status_code);
-        result.put("data", data);
-        return result;
-    }
-
-    private JSONObject responseEmailCertification(String saltString) {
-        JSONObject data = new JSONObject();
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-
-        data.put("certification_code", saltString);
-
-        status_code.put("status", "success");
-        status_code.put("desc", "");
-
-        result.put("metadata", status_code);
-        result.put("data", data);
-
-        return result;
-    }
-
-    public JSONObject responseError(String error_msg) {
-        JSONObject data = new JSONObject();
-        JSONObject status_code = new JSONObject();
-        JSONObject result = new JSONObject();
-
-        data.put("data", "");
-
-        status_code.put("status", "error");
-        status_code.put("desc", error_msg);
-
-        result.put("metadata", status_code);
-        result.put("data", data);
-
-        return result;
     }
 }

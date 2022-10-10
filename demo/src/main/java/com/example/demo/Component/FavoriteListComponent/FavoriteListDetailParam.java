@@ -8,6 +8,7 @@ import lombok.Data;
 
 @Data
 public class FavoriteListDetailParam {
+    @NotEmpty(message = "member_account不可為空")
     @Email(message = "必須email格式")
     private String account;
 

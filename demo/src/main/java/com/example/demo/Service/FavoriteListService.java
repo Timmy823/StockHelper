@@ -82,7 +82,8 @@ public class FavoriteListService {
 
         exist_list = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
         if (exist_list.size() > 1) {
-            return ResponseService.responseError("error", "list_name: \"" + data.getList_name() + "\" 重複" + exist_list.size() + "筆");
+            return ResponseService.responseError("error",
+                    "list_name: \"" + data.getList_name() + "\" 重複" + exist_list.size() + "筆");
         }
         if (exist_list.size() == 1) {
             if (exist_list.get(0).getStatus().equals("0")) {
@@ -252,7 +253,7 @@ public class FavoriteListService {
 
         ListDetailRepo.save(result_datail);
 
-        return ResponseService.responseSuccess(new JSONObject()) ;
+        return ResponseService.responseSuccess(new JSONObject());
     }
 
     public JSONObject deleteFavoriteListStock(FavoriteListStockDeleteParam data) {
@@ -294,6 +295,7 @@ public class FavoriteListService {
         MemberModel member = new MemberModel();
         ArrayList<FavoriteListNameModel> exist_lists = new ArrayList<FavoriteListNameModel>();
         ArrayList<FavoriteListDetailModel> stock_list = new ArrayList<FavoriteListDetailModel>();
+        Boolean isFindStockInList = false;
 
         // check member account exists.
         if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
@@ -316,7 +318,12 @@ public class FavoriteListService {
             // update stock comments.
             stock_list.get(0).setComment(data.getStock_comment());
             ListDetailRepo.save(stock_list.get(0));
+
+            isFindStockInList = true;
         }
-        return ResponseService.responseSuccess(new JSONObject());
+
+        return isFindStockInList
+                ? ResponseService.responseSuccess(new JSONObject())
+                : ResponseService.responseError("error", "列表中查無股票");
     }
 }

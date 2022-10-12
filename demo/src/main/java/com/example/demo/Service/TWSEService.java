@@ -94,16 +94,18 @@ public class TWSEService {
             Document doc = Jsoup.parse(new String(alllines.getBytes("UTF-8"), "UTF-8"));
             Elements trs = doc.select("tr");
 
-            boolean find_titles = false;
+            Boolean find_titles = false;
+            String current_title = "";
             for (int i = 0; i < trs.size(); i++) {
                 Elements tds = trs.get(i).select("td");
                 //tds.size!=7 為title
                 if (tds.size() != 7) {
-                    find_titles = title_string.contains(tds.text().trim());
+                    current_title = tds.text().trim().toString();
+                    find_titles = title_string.contains(current_title);
                     continue;
                 }
                 //如果還沒找到任何指定title就略過
-                if(find_titles == false) 
+                if(!find_titles) 
                     continue;
 
                 JSONObject company = new JSONObject();
@@ -115,8 +117,12 @@ public class TWSEService {
                 // <td bgcolor="#FAFAD2">1962/02/09</td>
                 company.put("上市/上櫃日期", tds.get(2).text());
                 // <td bgcolor="#FAFAD2">水泥工業</td>
-                company.put("產業別", tds.get(4).text());
-
+                if(current_title.equals("ETF")) {
+                    company.put("產業別", current_title);
+                } else {
+                    company.put("產業別", tds.get(4).text());
+                } 
+                
                 company_list.add(company);
             }
 

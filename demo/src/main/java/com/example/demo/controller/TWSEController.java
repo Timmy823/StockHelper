@@ -6,6 +6,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.*;
 
 import com.example.demo.Component.StockTradeInfoParam;
+import com.example.demo.Service.ResponseService;
 import com.example.demo.Service.TWSEService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -105,7 +106,7 @@ public class TWSEController {
             stock = new TWSEService(stockUrl, stringRedisTemplate);
             return stock.getExtrangeTradedFundRatio(stock_id);
         } catch (IOException e) {
-            return stock.responseError(e.toString());
+            return ResponseService.responseError("error", e.toString());
         }
     }
 }

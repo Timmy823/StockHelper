@@ -9,8 +9,6 @@ public class ResponseService {
         JSONObject status_code = new JSONObject();
         JSONObject result = new JSONObject();
 
-        data.put("data", "");
-
         status_code.put("status", status);
         status_code.put("desc", error_msg);
 

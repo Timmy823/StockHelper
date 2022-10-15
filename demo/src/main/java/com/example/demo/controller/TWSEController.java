@@ -94,4 +94,18 @@ public class TWSEController {
             return ResponseService.responseError("error", io.toString());
         }
     }
+
+    @GetMapping("/twse/getCompanyProfitablityIndex")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject getCompanyProfitablityIndex(TWSEService company,
+            @RequestParam("stock_id") @NotEmpty(message = "it can not be empty.") String stock_id) {
+        String stockUrl = "https://goodinfo.tw/tw/StockBzPerformance.asp?STOCK_ID=" + stock_id;
+        try {
+            company = new TWSEService(stockUrl, stringRedisTemplate);
+            return company.getCompanyProfitablityIndex(stock_id);
+        } catch (IOException io) {
+            io.printStackTrace();
+            return ResponseService.responseError("error", io.toString());
+        }
+    }
 }

@@ -13,6 +13,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
@@ -217,6 +218,80 @@ public class TWSEService {
                     etf_ratio_info.toString(), redis_ttl, TimeUnit.SECONDS);
 
             return ResponseService.responseSuccess(etf_ratio_info);
+        } catch (IOException io) {
+            return ResponseService.responseError("error", io.toString());
+        }
+    }
+
+    public JSONObject getCompanyProfitablityIndex(String stock_id) {
+        try {
+            String get_company_profit_redis_key = "company_profitablity_index :" + stock_id;
+            int redis_ttl = 86400; // redis存活一天
+
+            String company_profit_string = this.stringRedisTemplate.opsForValue().get(get_company_profit_redis_key);
+            if (company_profit_string != null) {
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(company_profit_string));
+            }
+
+            JSONArray profitablity_array = new JSONArray();
+            // 年度，營業毛利，營業利益，營業損益，稅後淨利，ROE，ROA
+            String[] profit_info_string = { "year", "gross_profit", "operating_profit", "operating_income",
+                    "net_income_after_taxes", "ROE", "ROA" };
+            // record profit_info_string index.
+            int profit_string_index;
+            // 營業毛利，營業利益，營業損益，稅後淨利 分成 金額及利率
+            String[] profit_item_string = { "amount", "margin" };
+            // column info position of html table.
+            Integer[] column_info_posString = { 0, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 };
+
+            // https connectiont
+            HttpsService httpsService = new HttpsService();
+            InputStream URLstream = httpsService.openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
+
+            String line = null;
+            String alllines = "";
+            while ((line = buffer.readLine()) != null) {
+                alllines += line;
+            }
+
+            Document doc = Jsoup.parse(new String(alllines.getBytes("UTF-8"), "UTF-8"));
+            // get profit table.
+            Elements table = doc.select("div#txtFinDetailData").select("table#tblDetail").select("tr[align=center]");
+            // string ready to check if it contans "(", and split it.
+            String item = "";
+
+            for (Element column : table) {
+                profit_string_index = 0;
+                JSONObject profit_info = new JSONObject();
+                Elements column_info = column.select("td");
+                // put year
+                profit_info.put(profit_info_string[profit_string_index++],
+                        column_info.get(column_info_posString[0]).text());
+                // put amount and margin of profitablity items, and profit_string_index++
+                for (int i = profit_string_index; i <= 4; i++, profit_string_index++) {
+                    JSONObject profit_item = new JSONObject();
+                    profit_item.put(profit_item_string[0], column_info.get(column_info_posString[i]).text());
+                    profit_item.put(profit_item_string[1], column_info.get(column_info_posString[i + 4]).text());
+
+                    profit_info.put(profit_info_string[i], profit_item);
+                }
+                // put ROE and ROA
+                item = column_info.get(column_info_posString[9]).text();
+                profit_info.put(profit_info_string[profit_string_index++],
+                        item.contains("(") ? item.split("[(]")[0].trim() : item);
+
+                item = column_info.get(column_info_posString[10]).text();
+                profit_info.put(profit_info_string[profit_string_index++],
+                        item.contains("(") ? item.split("[(]")[0].trim() : item);
+
+                profitablity_array.add(profit_info);
+            }
+
+            this.stringRedisTemplate.opsForValue().setIfAbsent(get_company_profit_redis_key,
+                    profitablity_array.toString(), redis_ttl, TimeUnit.SECONDS);
+
+            return ResponseService.responseJSONArraySuccess(profitablity_array);
         } catch (IOException io) {
             return ResponseService.responseError("error", io.toString());
         }

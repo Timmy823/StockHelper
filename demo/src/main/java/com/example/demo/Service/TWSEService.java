@@ -636,4 +636,50 @@ public class TWSEService {
             return ResponseService.responseError("error", io.toString());
         }
     }
+
+    public JSONObject getStockTradeInfo(String stock_id) {
+        JSONArray trade_info_array = new JSONArray();
+        String[] stock_item_string = {"t","o","h","l","c","v"};
+        String[] trade_info_string = {"date","openning_price","hightest_price","lowest_price","closing_price","volum"};
+      
+        try {
+            // check redis
+            String stock_trade_redis_key = "stock_trade_info_recent_half_year:" + stock_id;
+            int redis_ttl = 86400; // redis存活1天
+
+            String stock_info_string = this.stringRedisTemplate.opsForValue().get(stock_trade_redis_key);
+            if (stock_info_string != null) {
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(stock_info_string));
+            }
+
+            // https connection
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(this.stockUrl);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
+
+            String line = null;
+            String all_lines = "";
+
+            while ((line = buffer.readLine()) != null) {
+                all_lines += line;
+            }
+
+            JSONArray stock_info = JSONObject.fromObject(all_lines.replace("null(","").replace(");", "")).getJSONArray("ta");
+            for (int i=0 ; i<stock_info.size(); i++) {
+                JSONObject stock_item = stock_info.getJSONObject(i);
+                JSONObject trade_info = new JSONObject();
+                for(int j=0 ; j<stock_item_string.length ; j++) {
+                    trade_info.put(trade_info_string[j], stock_item.getString(stock_item_string[j]));
+                }
+                trade_info_array.add(trade_info);
+            }
+
+            this.stringRedisTemplate.opsForValue().setIfAbsent(stock_trade_redis_key,
+                    trade_info_array.toString(), redis_ttl, TimeUnit.SECONDS);
+
+            return ResponseService.responseJSONArraySuccess(trade_info_array);
+        } catch (IOException io) {
+            return ResponseService.responseError("error", io.toString());
+        }
+    }
 }

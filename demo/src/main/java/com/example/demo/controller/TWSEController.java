@@ -59,7 +59,8 @@ public class TWSEController {
     @CrossOrigin(origins = "*", allowedHeaders = "*")
     public JSONObject getCompanyDividendPolicy(TWSEService company,
             @RequestParam("stock_id") @NotEmpty(message = "it can not be empty.") String stock_id) {
-        String stockUrl = "https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.dividends;action=combineCashAndStock;limit=500;sortBy=-date;symbol=" + stock_id ;
+        String stockUrl = "https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.dividends;action=combineCashAndStock;limit=500;sortBy=-date;symbol="
+                + stock_id;
         try {
             company = new TWSEService(stockUrl, stringRedisTemplate);
             return company.getCompanyDividendPolicy(stock_id);
@@ -137,7 +138,7 @@ public class TWSEController {
 
         String stockUrl = "https://www.twse.com.tw/exchangeReport/MI_MARGN?response=json&date=" + specific_date
                 + "&selectType=ALL";
-        System.out.println(stockUrl);
+
         try {
             stock = new TWSEService(stockUrl, stringRedisTemplate);
             return stock.getMarginPurchaseAndShortSaleAmountDaily(stock_id, specific_date);
@@ -159,6 +160,19 @@ public class TWSEController {
         } catch (IOException io) {
             io.printStackTrace();
             return ResponseService.responseError("error", io.toString());
+        }
+    }
+
+    @GetMapping("/twse/getETFRatio")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject getExtrangeTradedFundRatio(TWSEService stock,
+            @RequestParam("stock_id") @NotEmpty(message = "it can not be empty.") String stock_id) {
+        String stockUrl = "https://tw.stock.yahoo.com/quote/" + stock_id + "/holding";
+        try {
+            stock = new TWSEService(stockUrl, stringRedisTemplate);
+            return stock.getExtrangeTradedFundRatio(stock_id);
+        } catch (IOException e) {
+            return ResponseService.responseError("error", e.toString());
         }
     }
 }

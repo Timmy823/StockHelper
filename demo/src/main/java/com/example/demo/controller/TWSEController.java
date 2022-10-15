@@ -138,7 +138,7 @@ public class TWSEController {
 
         String stockUrl = "https://www.twse.com.tw/exchangeReport/MI_MARGN?response=json&date=" + specific_date
                 + "&selectType=ALL";
-        System.out.println(stockUrl);
+
         try {
             stock = new TWSEService(stockUrl, stringRedisTemplate);
             return stock.getMarginPurchaseAndShortSaleAmountDaily(stock_id, specific_date);

@@ -184,6 +184,7 @@ public class TWSEService {
             while ((line = buffer.readLine()) != null) {
                 alllines += line;
             }
+
             Document doc = Jsoup.parse(new String(alllines.getBytes("UTF-8"), "UTF-8"));
             Elements divs = doc.select("div#main-2-QuoteHolding-Proxy");
             if (divs.size() == 0) {

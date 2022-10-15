@@ -2,7 +2,6 @@ package com.example.demo.Component.FavoriteListComponent;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotEmpty;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 import lombok.Data;
@@ -14,7 +13,6 @@ public class FavoriteListNameParam {
     private String account;
 
     @NotEmpty(message = "favorite_list_name不可為空")
-    @NotNull(message = "favorite_list_name不可為null")
     @Size(max = 50, message = "favorite_list_name最長50")
     private String list_name;
 

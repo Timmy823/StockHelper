@@ -1,7 +1,8 @@
 package com.example.demo.Service;
 
-import java.io.IOException;
+import java.io.BufferedReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URL;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -10,7 +11,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 public class HttpsService {
-    public InputStream openURL(String urlPath) throws IOException {
+    public InputStream openURL(String urlPath) throws Exception {
         URL url = new URL(urlPath);
         createTrustManager(url);
 
@@ -33,10 +34,11 @@ public class HttpsService {
         
         System.out.println("ready to connect!");
         url_connection.connect();
-
+        
         // the method is used to access the header filed after the connection
         if (url_connection.getResponseCode() != 200) {
             System.out.print("\nConnection Fail:" + url_connection.getResponseCode());
+            throw new Exception("connect error " + url_connection.getResponseCode());
         }
         return url_connection.getInputStream();
     }
@@ -66,5 +68,18 @@ public class HttpsService {
             e.printStackTrace();
         }
         return trust;
+    }
+
+    public String getURLBufferString(String url) throws Exception {
+        //connect https url
+        InputStream URLstream = openURL(url);
+        //get url info
+        BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
+        String line = null;
+        String alllines = "";
+        while ((line = buffer.readLine()) != null) {
+            alllines += line;
+        }
+        return alllines;
     }
 }

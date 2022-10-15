@@ -1,9 +1,6 @@
 package com.example.demo.Service;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -27,8 +24,10 @@ public class StockService {
         String redis_key = "institutional_investors_listed_stock_trade_info_" + specific_date + ":" + stock_id;
         String II_stock_trade_string = this.stringRedisTemplate.opsForValue().get(redis_key);
 
+        int redis_ttl = 86400; // redis存活一天
+
         if (II_stock_trade_string != null) {
-            return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(II_stock_trade_string));
+            return ResponseService.responseSuccess(JSONObject.fromObject(II_stock_trade_string));
         }
 
         ArrayList<String> url = new ArrayList<String>();
@@ -39,88 +38,112 @@ public class StockService {
         //get dealer share numbers of transaction 
         url.add(this.stockUrl + "TWT43U" + "?response=json&date=" + specific_date);
 
-        return getShareNumbersOfIIListedStockTransaction(0, url, new JSONObject(), stock_id, redis_key);
-    }
+        JSONObject II_info = new JSONObject();
 
-    private JSONObject getShareNumbersOfIIListedStockTransaction (int url_index, ArrayList<String> url, JSONObject II_info, String stock_id, String redis_key) {
-        try {
-            int redis_ttl = 86400; // redis存活一天
-
-            //put II_info object into investor trade array
-            JSONArray investor_trade_array = new JSONArray();
-            //put url info into the investor trade info
-            JSONObject investor_trade_info = new JSONObject();
-            //put different institutional investor into II info object 
-            String[] institutional_investors_string = {"foreign_investors", "investment_trust", "dealer"};
-            //put share numbers of transaction into investor trade info object
-            String[] trade_info_string = {"buy", "sell", "sum"};
-            //get stock id position of url stock info
-            Integer[] stock_id_index = {1,1,0};
-            
-            if (url_index == url.size()) {
-                investor_trade_array.add(II_info); 
-
-                //put result into redis
-                this.stringRedisTemplate.opsForValue().setIfAbsent(redis_key,
-                        investor_trade_array.toString(), redis_ttl, TimeUnit.SECONDS);
-                
-                return ResponseService.responseJSONArraySuccess(investor_trade_array);
-            }
-            //https connection 
+        try{
             HttpsService open_url = new HttpsService();
-            InputStream URLstream = open_url.openURL(url.get(url_index));
-            
-            //get url info
-            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
-            String line = null;
-            String alllines = "";
-            while ((line = buffer.readLine()) != null) {
-                alllines += line;
-            }
-
+            String alllines = open_url.getURLBufferString(url.get(0));
             JSONArray stock_array = JSONObject.fromObject(alllines).getJSONArray("data");
-            JSONArray stock_item;
+            JSONObject investor_trade_info = getForeignInvestorsListedStockTradeInfo(stock_array, stock_id);
+            II_info.put("foreign_investors", investor_trade_info);
 
-            for (int i=0; i<stock_array.size(); i++) {
-                stock_item = stock_array.getJSONArray(i);
-                //get param stock_id info
-                if (!stock_item.get(stock_id_index[url_index]).toString().trim().equals(stock_id)) 
-                    continue;
+            //investment_trust
+            open_url = new HttpsService();
+            alllines = open_url.getURLBufferString(url.get(1));
+            stock_array = JSONObject.fromObject(alllines).getJSONArray("data");
+            investor_trade_info = getInvestmentTrustListedStockTradeInfo(stock_array, stock_id);
+            II_info.put("investment_trust", investor_trade_info);
 
-                //QFII
-                if(url_index == 0) {
-                    investor_trade_info.put(trade_info_string[0], stock_item.get(9));
-                    investor_trade_info.put(trade_info_string[1], stock_item.get(10));
-                    investor_trade_info.put(trade_info_string[2], stock_item.get(11));
-                    break;
-                }
-                //QDII
-                if(url_index == 1) {
-                    investor_trade_info.put(trade_info_string[0], stock_item.get(3));
-                    investor_trade_info.put(trade_info_string[1], stock_item.get(4));
-                    investor_trade_info.put(trade_info_string[2], stock_item.get(5));
-                    break;
-                }
-                //dealer
-                if(url_index == 2) {
-                    investor_trade_info.put(trade_info_string[0], stock_item.get(8));
-                    investor_trade_info.put(trade_info_string[1], stock_item.get(9));
-                    investor_trade_info.put(trade_info_string[2], stock_item.get(10));
-                    break;
-                }
-            }
-            //if buy and sell are empty. add "" into  investor trade info 
-                
-            if(investor_trade_info.size() == 0) {
-                for(int i= 0; i< trade_info_string.length; i++) {
-                    investor_trade_info.put(trade_info_string[i], "0");
-                }
-            }
+            //dealer
+            open_url = new HttpsService();
+            alllines = open_url.getURLBufferString(url.get(2));
+            stock_array = JSONObject.fromObject(alllines).getJSONArray("data");
+            investor_trade_info = getDealerListedStockTradeInfo(stock_array, stock_id);
+            II_info.put("dealer", investor_trade_info);
 
-            II_info.put(institutional_investors_string[url_index], investor_trade_info);
-            return getShareNumbersOfIIListedStockTransaction(++url_index, url, II_info, stock_id, redis_key);
+            //put result into redis
+            this.stringRedisTemplate.opsForValue().setIfAbsent(redis_key,
+                II_info.toString(), redis_ttl, TimeUnit.SECONDS);
+
+            return ResponseService.responseSuccess(II_info);
         } catch (IOException io) {
             return ResponseService.responseError("error", io.toString());
+        } catch (Exception io) {
+            return ResponseService.responseError("error", io.toString());
         }
+    }
+
+    private JSONObject getForeignInvestorsListedStockTradeInfo (JSONArray stock_array, String stock_id) throws Exception{
+        JSONObject investor_trade_info = new JSONObject();
+        JSONArray stock_item;
+        String[] trade_info_string = {"buy", "sell", "sum"};
+
+        for (int i=0; i<stock_array.size(); i++) {
+            stock_item = stock_array.getJSONArray(i);
+            //get param stock_id info
+            if (!stock_id.equals(stock_item.get(1).toString().trim())) 
+                continue;
+
+            investor_trade_info.put(trade_info_string[0], stock_item.get(9));
+            investor_trade_info.put(trade_info_string[1], stock_item.get(10));
+            investor_trade_info.put(trade_info_string[2], stock_item.get(11));
+            break;
+        }
+        if(investor_trade_info.size() == 0) {
+            for(int i= 0; i< trade_info_string.length; i++) {
+                investor_trade_info.put(trade_info_string[i], "0");
+            }
+        }
+        return investor_trade_info;
+    }
+
+    private JSONObject getInvestmentTrustListedStockTradeInfo (JSONArray stock_array, String stock_id) throws Exception{
+        JSONObject investor_trade_info = new JSONObject();
+        JSONArray stock_item;
+        String[] trade_info_string = {"buy", "sell", "sum"};
+
+        for (int i=0; i<stock_array.size(); i++) {
+            stock_item = stock_array.getJSONArray(i);
+
+            //get param stock_id info
+            if (!stock_id.equals(stock_item.get(1).toString().trim())) 
+                continue;
+
+            investor_trade_info.put(trade_info_string[0], stock_item.get(3));
+            investor_trade_info.put(trade_info_string[1], stock_item.get(4));
+            investor_trade_info.put(trade_info_string[2], stock_item.get(5));
+            break;
+        }
+        if(investor_trade_info.size() == 0) {
+            for(int i= 0; i< trade_info_string.length; i++) {
+                investor_trade_info.put(trade_info_string[i], "0");
+            }
+        }
+        return investor_trade_info;
+    }
+
+    private JSONObject getDealerListedStockTradeInfo (JSONArray stock_array, String stock_id) {
+        JSONObject investor_trade_info = new JSONObject();
+        JSONArray stock_item;
+        String[] trade_info_string = {"buy", "sell", "sum"};
+
+        for (int i=0; i<stock_array.size(); i++) {
+            stock_item = stock_array.getJSONArray(i);
+
+            //get param stock_id info
+            if (!stock_id.equals(stock_item.get(0).toString().trim())) 
+                continue;
+
+            investor_trade_info.put(trade_info_string[0], stock_item.get(8));
+            investor_trade_info.put(trade_info_string[1], stock_item.get(9));
+            investor_trade_info.put(trade_info_string[2], stock_item.get(10));
+            break;
+        }
+        if(investor_trade_info.size() == 0) {
+            for(int i= 0; i< trade_info_string.length; i++) {
+                investor_trade_info.put(trade_info_string[i], "0");
+            }
+        }
+        return investor_trade_info;
     }
 }

@@ -2,12 +2,12 @@ package com.example.demo.Service;
 
 import java.util.ArrayList;
 import java.util.Properties;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import com.example.demo.Component.GetMemberInfoParam;
 import com.example.demo.Component.MemberRegisterParam;
 import com.example.demo.Component.MemberUpdateParam;
+import com.example.demo.Component.SendEmailParam;
 import com.example.demo.Component.FavoriteListComponent.FavoriteListDetailParam;
 import com.example.demo.Component.FavoriteListComponent.FavoriteListNameParam;
 import com.example.demo.Component.FavoriteListComponent.FavoriteListStockCommentParam;
@@ -199,16 +199,15 @@ public class MemberService {
         return ResponseService.responseSuccess(response_data);
     }
 
-    public JSONObject SendEmailCertification(JSONObject data) {
+    public JSONObject SendEmailCertification(SendEmailParam data) {
         try {
-            JSONObject salt = new JSONObject();
-            String customer_email = data.getString("member_account");
+            String customer_email = data.getAccount();
             // 檢核會員帳號是否存在
             if (MemberRepo.existByAccount(customer_email) == 0)
                 return ResponseService.responseError("error", "查無此會員帳號");
 
             // create random 6 numbers and letters
-            String salt_number = getSaltString(6);
+            String salt_number = data.getCertification();
             SimpleMailMessage mail_message = new SimpleMailMessage();
 
             // send email to customer
@@ -219,8 +218,7 @@ public class MemberService {
 
             mailSender().send(mail_message);
 
-            salt.put("certification_code", salt_number);
-            return ResponseService.responseSuccess(salt);
+            return ResponseService.responseSuccess(new JSONObject());
         } catch (MailException e) {
             return ResponseService.responseError("error", e.getMessage());
         }
@@ -277,7 +275,8 @@ public class MemberService {
 
         exist_list = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
         if (exist_list.size() > 1) {
-            return ResponseService.responseError("error", "list_name: \"" + data.getList_name() + "\" 重複" + exist_list.size() + "筆");
+            return ResponseService.responseError("error",
+                    "list_name: \"" + data.getList_name() + "\" 重複" + exist_list.size() + "筆");
         }
         if (exist_list.size() == 1) {
             if (exist_list.get(0).getStatus().equals("0")) {
@@ -430,7 +429,8 @@ public class MemberService {
         // check list is exists and get each list_name_id.
         exist_lists = ListNameRepo.FindListByMemberId(member.getMid());
 
-        // traverse all exists lists name, and get stock list info to update stock comment
+        // traverse all exists lists name, and get stock list info to update stock
+        // comment
         for (FavoriteListNameModel list_item : exist_lists) {
             stock_list = ListDetailRepo.FindListStockInfoByListNameIdAndStock(list_item.getList_name_id(),
                     data.getStock_id());
@@ -463,15 +463,5 @@ public class MemberService {
         properties.put("mail.smtp.starttls.required", "true");
         javaMailSender.setJavaMailProperties(properties);
         return javaMailSender;
-    }
-
-    private String getSaltString(int len) {
-        String SALTCHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-        StringBuilder salt = new StringBuilder(len);
-        Random number = new Random();
-        while (salt.length() < len) { // length of the random string.
-            salt.append(SALTCHARS.charAt(number.nextInt(SALTCHARS.length())));
-        }
-        return salt.toString();
     }
 }

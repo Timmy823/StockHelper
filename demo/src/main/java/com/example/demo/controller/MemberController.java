@@ -6,6 +6,7 @@ import javax.validation.constraints.NotEmpty;
 import com.example.demo.Component.GetMemberInfoParam;
 import com.example.demo.Component.MemberRegisterParam;
 import com.example.demo.Component.MemberUpdateParam;
+import com.example.demo.Component.SendEmailParam;
 import com.example.demo.Component.FavoriteListComponent.FavoriteListDetailParam;
 import com.example.demo.Component.FavoriteListComponent.FavoriteListNameParam;
 import com.example.demo.Component.FavoriteListComponent.FavoriteListStockCommentParam;
@@ -68,7 +69,7 @@ public class MemberController {
 
     @CrossOrigin(origins = "*", allowedHeaders = "*")
     @PostMapping("/member/sendEmailCertification")
-    public JSONObject SendEmailCertification(@RequestBody JSONObject input) {
+    public JSONObject SendEmailCertification(@Valid @RequestBody SendEmailParam input) {
         try {
             return memberService.SendEmailCertification(input);
         } catch (Exception io) {
@@ -78,10 +79,8 @@ public class MemberController {
 
     @CrossOrigin(origins = "*", allowedHeaders = "*")
     @GetMapping("/member/getFavoriteList")
-    public JSONObject getFavoriteList (
-            @RequestParam("member_account")
-            @NotEmpty(message = "it can not be empty.")
-            String member_account) {
+    public JSONObject getFavoriteList(
+            @RequestParam("member_account") @NotEmpty(message = "it can not be empty.") String member_account) {
         try {
             return memberService.getFavoriteList(member_account);
         } catch (Exception io) {

@@ -148,6 +148,21 @@ public class TWSEController {
         }
     }
 
+    @GetMapping("/twse/getStockTradeInfo")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject getStockTradeInfo(TWSEService stock,
+            @RequestParam("stock_id") @NotEmpty(message = "it can not be empty.") String stock_id) {
+        String stockUrl = "";
+        stockUrl = "https://tw.quote.finance.yahoo.net/quote/q?type=ta&perd=d&mkt=10&v=1&sym=" + stock_id;
+        try {
+            stock = new TWSEService(stockUrl, stringRedisTemplate);
+            return stock.getStockTradeInfo(stock_id);
+        } catch (IOException io) {
+            io.printStackTrace();
+            return ResponseService.responseError("error", io.toString());
+        }
+    }
+
     @GetMapping("/twse/getETFRatio")
     @CrossOrigin(origins = "*", allowedHeaders = "*")
     public JSONObject getExtrangeTradedFundRatio(TWSEService stock,

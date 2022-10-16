@@ -30,7 +30,7 @@ public class HttpsService {
         url_connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
         url_connection.setRequestProperty("Content-Length", Integer.toString(1000));
         url_connection.setRequestProperty("connection", "Keep-Alive");
-        
+
         System.out.println("ready to connect!");
         url_connection.connect();
 

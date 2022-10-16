@@ -4,8 +4,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
@@ -33,6 +36,163 @@ public class TWSEService {
     public TWSEService(String stockUrl, StringRedisTemplate stringRedisTemplate) throws IOException {
         this.stockUrl = stockUrl;
         this.stringRedisTemplate = stringRedisTemplate;
+    }
+
+    public JSONObject getLastDailyTopStockTradingVolume() {
+        int max_stocks = 5;
+        String top_trading_volume_listed_stock_url = "https://www.twse.com.tw/exchangeReport/MI_INDEX20?response=json";
+        String top_trading_volume_OTC_stock_url = "https://www.tpex.org.tw/web/stock/aftertrading/trading_volume/vol_rank_result.php?l=zh-tw&t=D";
+        String OTC_stock_trade_info_url = "https://www.tpex.org.tw/web/stock/aftertrading/daily_trading_info/st43_result.php?l=zh-tw&stkno=";
+        String top_trading_volume_ETF_url = "https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.etfRanking;limit="
+                + max_stocks + ";offset=0;rankId=volume?region=TW&site=finance&tz=Asia/Taipei6";
+
+        String[] top_stock_string = { "ranking", "stock_id", "stock_name", "shares_amount", "closing_price" };
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+            Date system_date = new Date();
+            String stock_volume_redis_key = "Last_daily_top_stop_trading_volume:" + sdf.format(system_date);
+            int redis_ttl = 86400; // redis存活1天
+
+            String stock_volume_string = this.stringRedisTemplate.opsForValue().get(stock_volume_redis_key);
+            if (stock_volume_string != null) {
+                return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(stock_volume_string));
+            }
+
+            // set response URL
+            JSONObject stock_type = new JSONObject();
+            JSONObject top_stock_info = new JSONObject();
+            // get url json
+            JSONArray listed_volume_array = new JSONArray();
+            JSONArray OTC_volume_array = new JSONArray();
+            JSONArray ETF_volume_array = new JSONArray();
+            JSONArray stock_array_info = new JSONArray();
+            JSONObject stock_item_info = new JSONObject();
+
+            HashMap<String, ArrayList<String>> OTC_stock = new HashMap<String, ArrayList<String>>();
+            for (int i = 0; i < max_stocks; i++) {
+                OTC_stock.put(top_stock_string[i], new ArrayList<String>());
+            }
+
+            // connet to listed stock top trading volumn URL
+            HttpsService open_url = new HttpsService();
+            InputStream URLstream = open_url.openURL(top_trading_volume_listed_stock_url);
+            BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
+            String line = null;
+            String alllines = "";
+            while ((line = buffer.readLine()) != null) {
+                alllines += line;
+            }
+            JSONArray listed_stock_array = JSONObject.fromObject(alllines).getJSONArray("data");
+
+            // connet to OTC stock top trading volume URL
+            URLstream = open_url.openURL(top_trading_volume_OTC_stock_url);
+            buffer = new BufferedReader(new InputStreamReader(URLstream, "BIG5"));
+            line = null;
+            alllines = "";
+            while ((line = buffer.readLine()) != null) {
+                alllines += line;
+            }
+            JSONObject readLineObject = JSONObject.fromObject(alllines);
+            JSONArray OTC_stock_array = readLineObject.getJSONArray("aaData");
+            String reportDate = readLineObject.getString("reportDate");
+
+            // connet to ETF top trading volume URL
+            URLstream = open_url.openURL(top_trading_volume_ETF_url);
+            buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
+            line = null;
+            alllines = "";
+            while ((line = buffer.readLine()) != null) {
+                alllines += line;
+            }
+            JSONArray ETF_array = JSONObject.fromObject(alllines).getJSONArray("list");
+
+            // get listed item info
+            for (int i = 0, count = 1; i < listed_stock_array.size() & count <= max_stocks; i++) {
+                stock_array_info = listed_stock_array.getJSONArray(i);
+
+                // get listed stock , not including ETF
+                if (stock_array_info.get(1).toString().length() != 4)
+                    continue;
+
+                top_stock_info = new JSONObject();
+                top_stock_info.put(top_stock_string[0], String.valueOf(count++));
+                top_stock_info.put(top_stock_string[1], stock_array_info.get(1));
+                top_stock_info.put(top_stock_string[2], stock_array_info.get(2));
+                top_stock_info.put(top_stock_string[3], stock_array_info.get(3).toString().replace(",", ""));
+                top_stock_info.put(top_stock_string[4], stock_array_info.get(8));
+                listed_volume_array.add(top_stock_info);
+            }
+
+            // get ETF info
+            for (int i = 0, count = 1; i < ETF_array.size() & count <= max_stocks; i++) {
+                stock_item_info = ETF_array.getJSONObject(i);
+
+                top_stock_info = new JSONObject();
+                top_stock_info.put(top_stock_string[0], String.valueOf(count++));
+                top_stock_info.put(top_stock_string[1], stock_item_info.getString("symbol").replace(".tw", ""));
+                top_stock_info.put(top_stock_string[2], stock_item_info.getString("symbolName"));
+                top_stock_info.put(top_stock_string[3], String.valueOf(stock_item_info.getInt("volumeK") * 1000));
+                top_stock_info.put(top_stock_string[4], stock_item_info.get("price"));
+                ETF_volume_array.add(top_stock_info);
+            }
+
+            // get otc info
+            for (int i = 0, count = 1; i < OTC_stock_array.size() & count <= max_stocks; i++) {
+                stock_array_info = OTC_stock_array.getJSONArray(i);
+
+                // get OTC stock , not including ETF
+                if (stock_array_info.get(1).toString().length() != 4)
+                    continue;
+
+                OTC_stock.get(top_stock_string[0]).add(String.valueOf(count++));
+                OTC_stock.get(top_stock_string[1]).add(stock_array_info.get(1).toString());
+                OTC_stock.get(top_stock_string[2]).add(stock_array_info.get(2).toString());
+            }
+
+            // get OTC stock top trading volume info
+            for (int i = 0; i < max_stocks; i++) {
+                URLstream = open_url.openURL(OTC_stock_trade_info_url + OTC_stock.get(top_stock_string[1]).get(i));
+                buffer = new BufferedReader(new InputStreamReader(URLstream, "BIG5"));
+                line = null;
+                alllines = "";
+                while ((line = buffer.readLine()) != null) {
+                    alllines += line;
+                }
+                OTC_stock_array = JSONObject.fromObject(alllines).getJSONArray("aaData");
+                // get OTC stock closing price and shares amount.
+                for (int j = OTC_stock_array.size() - 1; j >= 0; j--) {
+                    stock_array_info = OTC_stock_array.getJSONArray(j);
+                    if (!stock_array_info.get(0).equals(reportDate))
+                        continue;
+
+                    OTC_stock.get(top_stock_string[3]).add(String
+                            .valueOf(Integer.parseInt(stock_array_info.get(1).toString().replace(",", "")) * 1000));
+                    OTC_stock.get(top_stock_string[4]).add(stock_array_info.get(6).toString());
+                    break;
+                }
+            }
+
+            // put OTC stock info into OTC valume array
+            for (int i = 0; i < max_stocks; i++) {
+                top_stock_info = new JSONObject();
+                for (int j = 0; j < top_stock_string.length; j++) {
+                    top_stock_info.put(top_stock_string[j], OTC_stock.get(top_stock_string[j]).get(i).toString());
+                }
+                OTC_volume_array.add(top_stock_info);
+            }
+
+            // put ETF, listed and OTC stock info into stock_type.
+            stock_type.put("listed_stock", listed_volume_array);
+            stock_type.put("OTC_stock", OTC_volume_array);
+            stock_type.put("ETF", ETF_volume_array);
+
+            this.stringRedisTemplate.opsForValue().setIfAbsent(stock_volume_redis_key,
+                    stock_type.toString(), redis_ttl, TimeUnit.SECONDS);
+
+            return ResponseService.responseSuccess(stock_type);
+        } catch (IOException io) {
+            return ResponseService.responseError("error", io.toString());
+        }
     }
 
     public JSONObject getStockEps(String stock_id) {

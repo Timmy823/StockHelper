@@ -50,6 +50,7 @@ public class TWSEService {
             JSONObject revenue_item = new JSONObject();
             String[] belong_date;
             String belong_season = "";
+            String revenue_item_string;
 
             // https connection
             HttpsService open_url = new HttpsService();
@@ -81,9 +82,12 @@ public class TWSEService {
 
                 eps_item.put("year", belong_date[0]);
                 eps_item.put("season", belong_season);
-                eps_item.put("eps", revenue_item.getString("eps"));
-                eps_item.put("epsQoQ", revenue_item.getString("epsQoQ"));
-                eps_item.put("epsYoY", revenue_item.getString("epsYoY"));
+                eps_item.put("eps", (revenue_item_string = revenue_item.getString("eps")).equals("null") ? ""
+                        : revenue_item_string);
+                eps_item.put("epsQoQ", (revenue_item_string = revenue_item.getString("epsQoQ")).equals("null") ? ""
+                        : revenue_item_string);
+                eps_item.put("epsYoY", (revenue_item_string = revenue_item.getString("epsYoY")).equals("null") ? ""
+                        : revenue_item_string);
                 eps_array.add(eps_item);
             }
 

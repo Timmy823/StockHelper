@@ -137,12 +137,22 @@ public class TWSEController {
 
         String stockUrl = "https://www.twse.com.tw/exchangeReport/MI_MARGN?response=json&date=" + specific_date
                 + "&selectType=ALL";
-        System.out.println(stockUrl);
         try {
             stock = new TWSEService(stockUrl, stringRedisTemplate);
             return stock.getMarginPurchaseAndShortSaleAmountDaily(stock_id, specific_date);
         } catch (IOException io) {
             io.printStackTrace();
+            return ResponseService.responseError("error", io.toString());
+        }
+    }
+
+    @GetMapping("/twse/getLastDailyTopStockTradingVolume")
+    @CrossOrigin(origins = "*", allowedHeaders = "*")
+    public JSONObject getLastDailyTopStockTradingVolume(TWSEService stock) {
+        try {
+            stock = new TWSEService("", stringRedisTemplate);
+            return stock.getLastDailyTopStockTradingVolume();
+        } catch (Exception io) {
             return ResponseService.responseError("error", io.toString());
         }
     }

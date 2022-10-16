@@ -35,9 +35,11 @@ public class TWSEService {
     }
 
     public JSONObject getLastDailyTopStockTradingVolume() {
+        int max_stocks = 5;
         String top_trading_volume_listed_stock_url = "https://www.twse.com.tw/exchangeReport/MI_INDEX20?response=json";
         String top_trading_volume_OTC_stock_url = "https://www.tpex.org.tw/web/stock/aftertrading/trading_volume/vol_rank_result.php?l=zh-tw&t=D";
         String OTC_stock_trade_info_url = "https://www.tpex.org.tw/web/stock/aftertrading/daily_trading_info/st43_result.php?l=zh-tw&stkno=";
+        String top_trading_volume_ETF_url = "https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.etfRanking;limit="+ max_stocks +";offset=0;rankId=volume?region=TW&site=finance&tz=Asia/Taipei6";
         
         String[] top_stock_string = {"ranking", "stock_id" , "stock_name" , "shares_amount" ,"closing_price"};
         try{
@@ -51,18 +53,22 @@ public class TWSEService {
                 return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(stock_volume_string));
             }
 
+            //set response URL
             JSONObject stock_type = new JSONObject();
+            JSONObject top_stock_info = new JSONObject();
+            //get url json
             JSONArray listed_volume_array = new JSONArray();
             JSONArray OTC_volume_array = new JSONArray();
+            JSONArray ETF_volume_array = new JSONArray();
             JSONArray stock_array_info = new JSONArray();
-            int max_stocks=5;
-
+            JSONObject stock_item_info = new JSONObject();
+            
             HashMap<String,ArrayList<String>> OTC_stock = new HashMap<String,ArrayList<String>>();
             for(int i=0 ; i<max_stocks ; i++) {
                 OTC_stock.put(top_stock_string[i], new ArrayList<String>());
             }
 
-            // get listed stock top trading volumn info
+            // connet to listed stock top trading volumn URL
             HttpsService open_url = new HttpsService();
             InputStream URLstream = open_url.openURL(top_trading_volume_listed_stock_url);
             BufferedReader buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
@@ -73,7 +79,7 @@ public class TWSEService {
             }
             JSONArray listed_stock_array = JSONObject.fromObject(alllines).getJSONArray("data");
             
-            // get OTC stock top trading volume info
+            // connet to OTC stock top trading volume URL
             URLstream = open_url.openURL(top_trading_volume_OTC_stock_url);
             buffer = new BufferedReader(new InputStreamReader(URLstream, "BIG5"));
             line = null;
@@ -85,7 +91,17 @@ public class TWSEService {
             JSONArray OTC_stock_array = readLineObject.getJSONArray("aaData");
             String reportDate = readLineObject.getString("reportDate");
             
-            //get listed info
+            // connet to ETF top trading volume URL
+            URLstream = open_url.openURL(top_trading_volume_ETF_url);
+            buffer = new BufferedReader(new InputStreamReader(URLstream, "UTF-8"));
+            line = null;
+            alllines = "";
+            while ((line = buffer.readLine()) != null) {
+                alllines += line;
+            }
+            JSONArray ETF_array  = JSONObject.fromObject(alllines).getJSONArray("list");
+            
+            //get listed item info
             for (int i = 0, count = 1 ; i<listed_stock_array.size() & count<=max_stocks; i++) {
                 stock_array_info = listed_stock_array.getJSONArray(i);
 
@@ -93,13 +109,26 @@ public class TWSEService {
                 if(stock_array_info.get(1).toString().length() != 4) 
                     continue;
                 
-                JSONObject top_stock_info = new JSONObject();
+                top_stock_info = new JSONObject();
                 top_stock_info.put(top_stock_string[0],String.valueOf(count++));
                 top_stock_info.put(top_stock_string[1],stock_array_info.get(1));
                 top_stock_info.put(top_stock_string[2],stock_array_info.get(2));
                 top_stock_info.put(top_stock_string[3],stock_array_info.get(3).toString().replace(",",""));
                 top_stock_info.put(top_stock_string[4],stock_array_info.get(8));
                 listed_volume_array.add(top_stock_info);
+            }
+
+            //get ETF info
+            for (int i = 0, count = 1 ; i<ETF_array.size() & count<=max_stocks; i++) {
+                stock_item_info = ETF_array.getJSONObject(i);
+                
+                top_stock_info = new JSONObject();
+                top_stock_info.put(top_stock_string[0],String.valueOf(count++));
+                top_stock_info.put(top_stock_string[1],stock_item_info.getString("symbol").replace(".tw", ""));
+                top_stock_info.put(top_stock_string[2],stock_item_info.getString("symbolName"));
+                top_stock_info.put(top_stock_string[3],String.valueOf(stock_item_info.getInt("volumeK")*1000));
+                top_stock_info.put(top_stock_string[4],stock_item_info.get("price"));
+                ETF_volume_array.add(top_stock_info);
             }
             
             //get otc info
@@ -139,16 +168,17 @@ public class TWSEService {
             
             //put OTC stock info into OTC valume array
             for(int i=0 ; i<max_stocks ; i++) {
-                JSONObject top_stock_info = new JSONObject();
+                top_stock_info = new JSONObject();
                 for (int j=0 ; j<top_stock_string.length ; j++) {
                     top_stock_info.put(top_stock_string[j], OTC_stock.get(top_stock_string[j]).get(i).toString());
                 }
                 OTC_volume_array.add(top_stock_info);
             }
 
-            //put listed and OTC stock info into stock_type.
+            //put ETF, listed and OTC stock info into stock_type.
             stock_type.put("listed_stock", listed_volume_array);
             stock_type.put("OTC_stock", OTC_volume_array);
+            stock_type.put("ETF", ETF_volume_array);
             
             this.stringRedisTemplate.opsForValue().setIfAbsent(stock_volume_redis_key,
                     stock_type.toString(), redis_ttl, TimeUnit.SECONDS);

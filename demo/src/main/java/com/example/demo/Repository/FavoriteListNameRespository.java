@@ -13,4 +13,7 @@ public interface FavoriteListNameRespository extends JpaRepository<FavoriteListN
 
     @Query(nativeQuery = true, value = "select * from favorite_list_name where BINARY member_id = ?1")
     public ArrayList<FavoriteListNameModel> FindListByMemberId(String member_id);
+
+    @Query(nativeQuery = true, value = "select * from favorite_list_name where BINARY member_id = ?1 and status = '0'")
+    public ArrayList<FavoriteListNameModel> FindValidListByMemberId(String member_id);
 }

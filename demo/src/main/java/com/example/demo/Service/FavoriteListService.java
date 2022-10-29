@@ -184,6 +184,11 @@ public class FavoriteListService {
             return ResponseService.responseError("error", "查無會員帳號");
         }
 
+        // member must have at least one valid list.
+        exist_list = ListNameRepo.FindValidListByMemberId(member.getMid());
+        if (exist_list.size() <= 1) 
+            return ResponseService.responseError("error", "會員帳號必須只有一個列表無法刪除");
+            
         // check list is exists and valid.
         exist_list = ListNameRepo.FindListByMemberAndListName(member.getMid(), data.getList_name());
         if (exist_list.size() == 0 || !exist_list.get(0).getStatus().equals("0"))

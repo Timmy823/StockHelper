@@ -121,8 +121,11 @@ public class MemberService {
     }
 
     public JSONObject createMember(MemberRegisterParam data) {
+        String member_info_redis_key = "member_info:" + data.getAccount();
+
         // 檢核會員帳號是否存在
-        if ((MemberRepo.FindByAccount(data.getAccount())) != null) {
+        String member_string = this.stringRedisTemplate.opsForValue().get(member_info_redis_key);
+        if (member_string != null || (MemberRepo.FindByAccount(data.getAccount())) != null) {
             return ResponseService.responseError("error", "會員帳號已創建");
         }
 
@@ -142,7 +145,7 @@ public class MemberService {
 
     public JSONObject updateMember(MemberUpdateParam data) {
         // 檢核會員帳號是否存在
-        MemberModel member = MemberRepo.FindByAccount(data.getAccount());
+        MemberModel member = getMember(data.getAccount());
         if (member == null) {
             return ResponseService.responseError("error", "會員帳號或密碼錯誤");
         }
@@ -172,7 +175,7 @@ public class MemberService {
         }
 
         String get_member_info_redis_key = "member_info:" + data.getAccount();
-        int redis_ttl = 3600; // redis存活 1 hour
+        int redis_ttl = 86400*3; // redis存活 3 days
 
         // add member login log data
         LoginLogModel loginlogModel = new LoginLogModel();

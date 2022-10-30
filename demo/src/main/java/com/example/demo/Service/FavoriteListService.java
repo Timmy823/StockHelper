@@ -1,6 +1,7 @@
 package com.example.demo.Service;
 
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import com.example.demo.Component.FavoriteListComponent.*;
 import com.example.demo.Entity.FavoriteListDetailModel;
@@ -32,6 +33,14 @@ public class FavoriteListService {
     }
 
     public JSONObject getFavoriteList(String member_account) {
+        String get_favorite_list_redis_key = "favorite_list:" + member_account;
+        int redis_ttl = 86400 * 3; // redis存活 3 days
+
+        String favorite_list_info_string = this.stringRedisTemplate.opsForValue().get(get_favorite_list_redis_key);
+        if (favorite_list_info_string != null) {
+            return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(favorite_list_info_string));
+        }
+
         MemberModel member = new MemberModel();
         ArrayList<FavoriteListNameModel> list_names = new ArrayList<FavoriteListNameModel>();
         ArrayList<FavoriteListDetailModel> list_details = new ArrayList<FavoriteListDetailModel>();
@@ -68,6 +77,10 @@ public class FavoriteListService {
             response_data.add(response_item);
         }
 
+        // set redis
+        this.stringRedisTemplate.opsForValue().setIfAbsent(get_favorite_list_redis_key,
+                response_data.toString(), redis_ttl, TimeUnit.SECONDS);
+
         return ResponseService.responseJSONArraySuccess(response_data);
     }
 
@@ -93,6 +106,8 @@ public class FavoriteListService {
             exist_list.get(0).setStatus("0");
             ListNameRepo.save(exist_list.get(0));
 
+            //delete favorite list redis of member.
+            deleteRedisFavoriteList(data.getAccount());
             return ResponseService.responseSuccess(new JSONObject());
         }
 
@@ -104,6 +119,8 @@ public class FavoriteListService {
         result_list.setUpdate_user("system");
         ListNameRepo.save(result_list);
 
+        //delete favorite list redis of member.
+        deleteRedisFavoriteList(data.getAccount());
         return ResponseService.responseSuccess(new JSONObject());
     }
 
@@ -130,6 +147,9 @@ public class FavoriteListService {
         if (new_list_names.size() == 0) {
             list_names.get(0).setFavorite_list_name(data.getNew_list_name());
             ListNameRepo.save(list_names.get(0));
+    
+            //delete favorite list redis of member.
+            deleteRedisFavoriteList(data.getAccount());
             return ResponseService.responseSuccess(new JSONObject());
         }
 
@@ -171,6 +191,9 @@ public class FavoriteListService {
 
         new_list_names.get(0).setStatus("0");
         ListNameRepo.save(new_list_names.get(0));
+
+        //delete favorite list redis of member.
+        deleteRedisFavoriteList(data.getAccount());
         return ResponseService.responseSuccess(new JSONObject());
     }
 
@@ -207,6 +230,9 @@ public class FavoriteListService {
             stock_item.setStatus("1");
             ListDetailRepo.save(stock_item);
         }
+        
+        //delete favorite list redis of member.
+        deleteRedisFavoriteList(data.getAccount());
         return ResponseService.responseSuccess(new JSONObject());
     }
 
@@ -245,6 +271,9 @@ public class FavoriteListService {
             }
             list_datail.get(0).setStatus("0");
             ListDetailRepo.save(list_datail.get(0));
+
+            //delete favorite list redis of member.
+            deleteRedisFavoriteList(data.getAccount());
             return ResponseService.responseSuccess(new JSONObject());
         }
 
@@ -258,6 +287,8 @@ public class FavoriteListService {
 
         ListDetailRepo.save(result_datail);
 
+        //delete favorite list redis of member.
+        deleteRedisFavoriteList(data.getAccount());
         return ResponseService.responseSuccess(new JSONObject());
     }
 
@@ -293,6 +324,8 @@ public class FavoriteListService {
         stock_list.get(0).setStatus("1");
         ListDetailRepo.save(stock_list.get(0));
 
+        //delete favorite list redis of member.
+        deleteRedisFavoriteList(data.getAccount());
         return ResponseService.responseSuccess(new JSONObject());
     }
 
@@ -327,8 +360,16 @@ public class FavoriteListService {
             isFindStockInList = true;
         }
 
-        return isFindStockInList
-                ? ResponseService.responseSuccess(new JSONObject())
-                : ResponseService.responseError("error", "列表中查無股票");
+        if(!isFindStockInList) 
+            return ResponseService.responseError("error", "列表中查無股票");
+            
+        //delete favorite list redis of member.
+        deleteRedisFavoriteList(data.getAccount());
+        return ResponseService.responseSuccess(new JSONObject());
+    }
+
+    private void deleteRedisFavoriteList(String member_account) {
+        String favorite_list_redis_key = "favorite_list:" + member_account;
+        this.stringRedisTemplate.delete(favorite_list_redis_key);
     }
 }

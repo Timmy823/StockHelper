@@ -326,9 +326,16 @@ public class FavoriteListService {
 
             isFindStockInList = true;
         }
+        if(!isFindStockInList) 
+            return ResponseService.responseError("error", "列表中查無股票");
 
-        return isFindStockInList
-                ? ResponseService.responseSuccess(new JSONObject())
-                : ResponseService.responseError("error", "列表中查無股票");
+        //delete favorite list redis of member.
+        deleteRedisFavoriteList(data.getAccount());
+        return ResponseService.responseSuccess(new JSONObject());
+    }
+
+    private void deleteRedisFavoriteList(String member_account) {
+        String favorite_list_redis_key = "favorite_list:" + member_account;
+        this.stringRedisTemplate.delete(favorite_list_redis_key);
     }
 }

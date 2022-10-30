@@ -1,6 +1,7 @@
 package com.example.demo.Service;
 
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import com.example.demo.Component.FavoriteListComponent.*;
 import com.example.demo.Entity.FavoriteListDetailModel;
@@ -32,6 +33,15 @@ public class FavoriteListService {
     }
 
     public JSONObject getFavoriteList(String member_account) {
+
+        String get_favorite_list_redis_key = "favorite_list:" + member_account;
+        int redis_ttl = 86400 * 3; // redis存活 3 days
+
+        String favorite_list_info_string = this.stringRedisTemplate.opsForValue().get(get_favorite_list_redis_key);
+        if (favorite_list_info_string != null) {
+            return ResponseService.responseJSONArraySuccess(JSONArray.fromObject(favorite_list_info_string));
+        }
+
         MemberModel member = new MemberModel();
         ArrayList<FavoriteListNameModel> list_names = new ArrayList<FavoriteListNameModel>();
         ArrayList<FavoriteListDetailModel> list_details = new ArrayList<FavoriteListDetailModel>();
@@ -67,6 +77,10 @@ public class FavoriteListService {
             response_item.put("stock_list", item_array);
             response_data.add(response_item);
         }
+
+        // set redis
+        this.stringRedisTemplate.opsForValue().setIfAbsent(get_favorite_list_redis_key,
+                response_data.toString(), redis_ttl, TimeUnit.SECONDS);
 
         return ResponseService.responseJSONArraySuccess(response_data);
     }

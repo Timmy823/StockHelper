@@ -145,7 +145,7 @@ public class MemberService {
 
     public JSONObject updateMember(MemberUpdateParam data) {
         // 檢核會員帳號是否存在
-        MemberModel member = getMember(data.getAccount());
+        MemberModel member = MemberRepo.FindByAccount(data.getAccount());
         if (member == null) {
             return ResponseService.responseError("error", "會員帳號或密碼錯誤");
         }
@@ -184,9 +184,12 @@ public class MemberService {
         loginlogModel.setUpdate_user("system");
         LoginLogRepo.save(loginlogModel);
 
+        //get member info from redis and then remove specific field.
         String member_info_string = this.stringRedisTemplate.opsForValue().get(get_member_info_redis_key);
         if (member_info_string != null) {
-            return ResponseService.responseSuccess(JSONObject.fromObject(member_info_string));
+            response_data = JSONObject.fromObject(member_info_string);
+            response_data.remove("member_id");
+            return ResponseService.responseSuccess(response_data);
         }
 
         response_data.put("member_account", member.getMember_account());
@@ -194,11 +197,13 @@ public class MemberService {
         response_data.put("telephone", member.getTelephone());
         response_data.put("member_account_verification(Y/N)", member.getIsValid().equals("99") ? "N" : "Y");
         response_data.put("member_account_create_timestamp", member.getCreate_time().toString());
+        response_data.put("member_id", member.getMid());
 
         // set member info into redis
         this.stringRedisTemplate.opsForValue().setIfAbsent(get_member_info_redis_key,
                 response_data.toString(), redis_ttl, TimeUnit.SECONDS);
 
+        response_data.remove("member_id");
         return ResponseService.responseSuccess(response_data);
     }
 

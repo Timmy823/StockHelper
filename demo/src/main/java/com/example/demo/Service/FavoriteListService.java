@@ -8,7 +8,6 @@ import com.example.demo.Entity.FavoriteListNameModel;
 import com.example.demo.Entity.MemberModel;
 import com.example.demo.Repository.FavoriteListDetailRespository;
 import com.example.demo.Repository.FavoriteListNameRespository;
-import com.example.demo.Repository.MemberRespository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -21,24 +20,25 @@ import net.sf.json.JSONObject;
 public class FavoriteListService {
     private StringRedisTemplate stringRedisTemplate;
     @Autowired
-    private MemberRespository MemberRepo;
-    @Autowired
     private FavoriteListNameRespository ListNameRepo;
     @Autowired
     private FavoriteListDetailRespository ListDetailRepo;
+
+    @Autowired
+    MemberService memberService = new MemberService(this.stringRedisTemplate);
 
     public FavoriteListService(StringRedisTemplate stringRedisTemplate) {
         this.stringRedisTemplate = stringRedisTemplate;
     }
 
-    public JSONObject getFavoriteList(String member_account) {
+    public JSONObject getFavoriteList (String member_account) {
         MemberModel member = new MemberModel();
         ArrayList<FavoriteListNameModel> list_names = new ArrayList<FavoriteListNameModel>();
         ArrayList<FavoriteListDetailModel> list_details = new ArrayList<FavoriteListDetailModel>();
         JSONArray response_data = new JSONArray();
-
+        
         // Check member exists, and get mid.
-        if ((member = MemberRepo.FindByAccount(member_account)) == null) {
+        if ((member = memberService.checkMember(member_account)) == null) {
             return ResponseService.responseError("error", "會員帳號尚未建立");
         }
 
@@ -76,7 +76,7 @@ public class FavoriteListService {
         ArrayList<FavoriteListNameModel> exist_list = new ArrayList<FavoriteListNameModel>();
         FavoriteListNameModel result_list = new FavoriteListNameModel();
         // 檢核會員帳號是否存在
-        if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
+        if ((member = memberService.checkMember(data.getAccount())) == null) {
             return ResponseService.responseError("error", "查無會員帳號");
         }
 
@@ -115,7 +115,7 @@ public class FavoriteListService {
         ArrayList<FavoriteListDetailModel> new_list_stocks = new ArrayList<FavoriteListDetailModel>();
 
         // Check member exists, and get member_id.
-        if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
+        if ((member = memberService.checkMember(data.getAccount())) == null) {
             return ResponseService.responseError("error", "會員帳號尚未建立");
         }
 
@@ -180,7 +180,7 @@ public class FavoriteListService {
         ArrayList<FavoriteListDetailModel> stock_list = new ArrayList<FavoriteListDetailModel>();
 
         // check member account exists.
-        if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
+        if ((member = memberService.checkMember(data.getAccount())) == null) {
             return ResponseService.responseError("error", "查無會員帳號");
         }
 
@@ -217,7 +217,7 @@ public class FavoriteListService {
         FavoriteListDetailModel result_datail = new FavoriteListDetailModel();
 
         // 檢核會員帳號是否存在
-        if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
+        if ((member = memberService.checkMember(data.getAccount())) == null) {
             return ResponseService.responseError("error", "查無會員帳號");
         }
 
@@ -267,7 +267,7 @@ public class FavoriteListService {
         ArrayList<FavoriteListDetailModel> stock_list = new ArrayList<FavoriteListDetailModel>();
 
         // check member account exists.
-        if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
+        if ((member = memberService.checkMember(data.getAccount())) == null) {
             return ResponseService.responseError("error", "查無會員帳號");
         }
         // check list is exists and get list_name_id.
@@ -303,7 +303,7 @@ public class FavoriteListService {
         Boolean isFindStockInList = false;
 
         // check member account exists.
-        if ((member = MemberRepo.FindByAccount(data.getAccount())) == null) {
+        if ((member = memberService.checkMember(data.getAccount())) == null) {
             return ResponseService.responseError("error", "查無會員帳號");
         }
         // check list is exists and get each list_name_id.

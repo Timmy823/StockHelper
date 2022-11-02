@@ -41,7 +41,6 @@ public class MemberService {
     private StringRedisTemplate stringRedisTemplate;
     @Autowired
     private MemberRespository MemberRepo;
-
     @Autowired
     private LoginLogRespository LoginLogRepo;
     @Autowired
@@ -166,8 +165,6 @@ public class MemberService {
     }
 
     public JSONObject getMemberInfo(GetMemberInfoParam data) {
-        JSONObject response_data = new JSONObject();
-
         // 檢核會員帳號是否存在
         MemberModel member = MemberRepo.FindByAccountAndPassword(data.getAccount(), data.getPassword());
         if (member == null) {
@@ -176,6 +173,7 @@ public class MemberService {
 
         String get_member_info_redis_key = "member_info:" + data.getAccount();
         int redis_ttl = 86400*3; // redis存活 3 days
+        JSONObject response_data;
 
         // add member login log data
         LoginLogModel loginlogModel = new LoginLogModel();
@@ -184,14 +182,14 @@ public class MemberService {
         loginlogModel.setUpdate_user("system");
         LoginLogRepo.save(loginlogModel);
 
-        //get member info from redis and then remove specific field.
-        String member_info_string = this.stringRedisTemplate.opsForValue().get(get_member_info_redis_key);
-        if (member_info_string != null) {
-            response_data = JSONObject.fromObject(member_info_string);
+        //get member info by redis.
+        response_data = getMemberInfoByRedis(data.getAccount());
+        if (response_data != null) {
             response_data.remove("member_id");
             return ResponseService.responseSuccess(response_data);
         }
 
+        response_data = new JSONObject();
         response_data.put("member_account", member.getMember_account());
         response_data.put("name", member.getName());
         response_data.put("telephone", member.getTelephone());
@@ -471,5 +469,36 @@ public class MemberService {
         properties.put("mail.smtp.starttls.required", "true");
         javaMailSender.setJavaMailProperties(properties);
         return javaMailSender;
+    }
+
+    public MemberModel checkMember(String member_account) {
+        MemberModel member = new MemberModel();
+        //if member does not exist in redis, and then get member by mysql.
+        if ((member = getMemberModelByRedis(member_account)) == null) {
+            member = MemberRepo.FindByAccount(member_account);
+        }
+        return member;
+    }
+
+    private JSONObject getMemberInfoByRedis(String member_account) {
+        return JSONObject.fromObject(this.stringRedisTemplate.opsForValue().get("member_info:" + member_account));
+    }
+
+    private MemberModel getMemberModelByRedis(String member_account) {
+        MemberModel member = new MemberModel();
+        JSONObject member_redis;
+        String member_redis_string  = this.stringRedisTemplate.opsForValue().get("member_info:" + member_account);
+
+        if(member_redis_string == null) {
+            return null;
+        }   
+
+        member_redis = JSONObject.fromObject(member_redis_string);
+        member.setMember_account(member_redis.getString("member_account"));
+        member.setName(member_redis.getString("name"));
+        member.setTelephone(member_redis.getString("telephone"));
+        member.setIsValid(member_redis.getString("member_account_verification(Y/N)").equals("Y") ? "00" : "99");
+        member.setMid(member_redis.getString("member_id"));
+        return member;
     }
 }
